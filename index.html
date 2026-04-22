@@ -350,9 +350,9 @@ let octaveJumping = false;
 // Level 1 state
 let bubbles = [];
 let l1Score = 0;
-const L1_TARGET = 12;
 let l1BubbleTimer = 0;
 let l1BubbleInterval = 1.8;
+let l1HighScore = parseInt(localStorage.getItem('l1HighScore') || '0');
 
 // Level 2 state
 let platforms = [];
@@ -748,6 +748,18 @@ function drawMenu(dt) {
   ctx.fillText('Octave le chat a perdu toutes ses couleurs…', W / 2, H * 0.59);
   ctx.fillText('Choisis un niveau pour l\'aider !', W / 2, H * 0.64);
 
+  // High score niveau 1
+  if (l1HighScore > 0) {
+    ctx.save();
+    ctx.font = `bold ${Math.floor(W * 0.019)}px Comic Sans MS, cursive`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 10;
+    ctx.fillText(`🏆 Record Chasse aux Touches : ${l1HighScore} bulles`, W / 2, H * 0.70);
+    ctx.restore();
+  }
+
   // 3 level buttons
   const btnW = Math.min(240, W * 0.27);
   const btnH = 80;
@@ -834,7 +846,7 @@ function startLevel1() {
   showInstruction(
     '🫧 La Chasse aux Touches',
     'Des bulles colorées vont tomber du ciel !<br>Regarde la couleur et le nom de la note,<br>puis clique sur la bonne touche du piano. 🎹<br><br>' +
-    '🎯 Attrape <strong>12 bulles</strong> pour passer au niveau suivant !',
+    '🎯 Attrape un maximum de bulles avant de perdre tes 3 vies !<br>Le jeu s\'accélère au fil du temps… Bonne chance ! 🍀',
     '🎵 Jouons !',
     () => {}
   );
@@ -876,8 +888,12 @@ function updateLevel1(dt) {
         updateHUD();
         playError();
         if (lives <= 0) {
-          setTimeout(() => initMenu(), 1200);
-          showMessage('😿 Oh non… Retour au début !', 2);
+          if (l1Score > l1HighScore) {
+            l1HighScore = l1Score;
+            localStorage.setItem('l1HighScore', l1HighScore);
+          }
+          setTimeout(() => transitionTo('menu'), 1800);
+          showMessage(`😿 Game over ! Score : ${l1Score}`, 2);
         }
       }
     } else if (b.hit) {
@@ -925,7 +941,7 @@ function drawLevel1() {
   ctx.font = 'bold 20px Comic Sans MS, cursive';
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(255,255,200,0.7)';
-  ctx.fillText(`🎯 ${l1Score} / ${L1_TARGET}`, 20, H - 165);
+  ctx.fillText(`🫧 ${l1Score} bulles`, 20, H - 165);
 
   // Draw bubbles
   bubbles.forEach(b => {
@@ -972,9 +988,6 @@ function drawLevel1() {
     ctx.restore();
   });
 
-  if (l1Score >= L1_TARGET) {
-    transitionTo('menu');
-  }
 }
 
 function l1HandleNote(noteId) {
@@ -989,9 +1002,6 @@ function l1HandleNote(noteId) {
     l1Score++;
     updateHUD();
     flashKey(noteId);
-    if (l1Score >= L1_TARGET) {
-      showMessage('🌟 Bravo ! Retour au menu…', 1.8);
-    }
   } else {
     // Wrong note or no bubble - just play the note
     const note = NOTES[noteId];
