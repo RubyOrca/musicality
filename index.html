@@ -678,8 +678,13 @@ function initMenu() {
   menuNoteSparkles = [];
 }
 
+const MENU_BUTTONS = [
+  { label: '🫧 La Chasse aux Touches', sub: 'Attrape les bulles !', color1: '#4488FF', color2: '#44CCFF', action: () => startLevel1() },
+  { label: '⭐ Le Chant des Étoiles',  sub: 'Écoute et saute !',    color1: '#9944CC', color2: '#FF69B4', action: () => startLevel2() },
+  { label: '🎹 Le Grand Concert',      sub: 'Joue la mélodie !',    color1: '#FF6644', color2: '#FFD700', action: () => startLevel3() },
+];
+
 function drawMenu(dt) {
-  // Background gradient
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, '#0a0a2e');
   grad.addColorStop(1, '#1a0a3e');
@@ -687,7 +692,6 @@ function drawMenu(dt) {
   ctx.fillRect(0, 0, W, H);
 
   drawStars(dt);
-
   menuTimer += dt;
 
   // Floating note sparkles
@@ -717,87 +721,102 @@ function drawMenu(dt) {
     ctx.restore();
   });
 
-  // Title glow
-  const titleY = H * 0.22;
+  // Title
   ctx.save();
   ctx.shadowColor = '#FFD700';
   ctx.shadowBlur = 30;
-  ctx.font = `bold ${Math.floor(W * 0.065)}px Comic Sans MS, cursive`;
+  ctx.font = `bold ${Math.floor(W * 0.055)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#FFD700';
-  ctx.fillText("L'Odyssée des Notes Magiques", W / 2, titleY);
+  ctx.fillText("L'Odyssée des Notes Magiques", W / 2, H * 0.16);
   ctx.restore();
 
   // Subtitle
-  ctx.save();
-  ctx.font = `${Math.floor(W * 0.025)}px Comic Sans MS, cursive`;
+  ctx.font = `${Math.floor(W * 0.023)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(200,200,255,0.8)';
-  ctx.fillText('✨ Aide Octave à retrouver ses couleurs ! ✨', W / 2, titleY + 50);
-  ctx.restore();
+  ctx.fillText('✨ Aide Octave à retrouver ses couleurs ! ✨', W / 2, H * 0.22);
 
   // Octave (gray, bouncing)
-  const bounce = Math.sin(menuTimer * 2) * 10;
-  drawOctave(W / 2, H * 0.52 + bounce, 80, true);
+  const bounce = Math.sin(menuTimer * 2) * 8;
+  drawOctave(W / 2, H * 0.42 + bounce, 62, true);
 
-  // Story text
-  ctx.save();
-  ctx.font = `${Math.floor(W * 0.022)}px Comic Sans MS, cursive`;
+  // Story
+  ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#CCCCEE';
-  const story = 'Octave le chat a perdu toutes ses couleurs…';
-  const story2 = 'Joue les bonnes notes pour lui rendre la vie !';
-  ctx.fillText(story,  W / 2, H * 0.68);
-  ctx.fillText(story2, W / 2, H * 0.72);
-  ctx.restore();
+  ctx.fillText('Octave le chat a perdu toutes ses couleurs…', W / 2, H * 0.59);
+  ctx.fillText('Choisis un niveau pour l\'aider !', W / 2, H * 0.64);
 
-  // Note colors legend
-  const legendY = H * 0.81;
-  NOTES.forEach((n, i) => {
-    const lx = W / 2 + (i - 3) * (W * 0.07);
+  // 3 level buttons
+  const btnW = Math.min(240, W * 0.27);
+  const btnH = 80;
+  const gap = Math.min(28, W * 0.03);
+  const totalW = 3 * btnW + 2 * gap;
+  const startX = W / 2 - totalW / 2;
+  const btnY = H * 0.76;
+
+  MENU_BUTTONS.forEach((btn, i) => {
+    const bx = startX + i * (btnW + gap);
+    const cx = bx + btnW / 2;
+    const cy = btnY + btnH / 2;
+    const pulse = 1 + Math.sin(menuTimer * 2.5 + i * 1.1) * 0.04;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(pulse, pulse);
+
+    // Shadow
     ctx.beginPath();
-    ctx.arc(lx, legendY, 18, 0, Math.PI * 2);
-    ctx.fillStyle = n.color;
-    ctx.shadowColor = n.color;
-    ctx.shadowBlur = 14;
+    ctx.roundRect(-btnW/2 + 4, -btnH/2 + 6, btnW, btnH, 16);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.fill();
+
+    // Button body
+    const bg = ctx.createLinearGradient(-btnW/2, -btnH/2, btnW/2, btnH/2);
+    bg.addColorStop(0, btn.color1);
+    bg.addColorStop(1, btn.color2);
+    ctx.beginPath();
+    ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 16);
+    ctx.fillStyle = bg;
+    ctx.shadowColor = btn.color1;
+    ctx.shadowBlur = 18;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.font = 'bold 13px Comic Sans MS, cursive';
+
+    // Main label
+    ctx.font = `bold ${Math.floor(btnW * 0.115)}px Comic Sans MS, cursive`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
-    ctx.fillText(n.name, lx, legendY + 33);
-  });
+    ctx.textBaseline = 'middle';
+    ctx.fillText(btn.label, 0, -10);
 
-  // Start button (pulsing)
-  const pulse = 1 + Math.sin(menuTimer * 3) * 0.06;
-  ctx.save();
-  ctx.translate(W / 2, H * 0.91);
-  ctx.scale(pulse, pulse);
-  const btnW = 280, btnH = 60;
-  const btnGrad = ctx.createLinearGradient(-btnW/2, 0, btnW/2, 0);
-  btnGrad.addColorStop(0, '#FF6644');
-  btnGrad.addColorStop(0.5, '#FFD700');
-  btnGrad.addColorStop(1, '#FF6644');
-  ctx.beginPath();
-  ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 30);
-  ctx.fillStyle = btnGrad;
-  ctx.shadowColor = '#FFD700';
-  ctx.shadowBlur = 20;
-  ctx.fill();
-  ctx.font = `bold 26px Comic Sans MS, cursive`;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#0a0a2e';
-  ctx.shadowBlur = 0;
-  ctx.fillText('🎹 Commencer l\'aventure !', 0, 9);
-  ctx.restore();
+    // Sub label
+    ctx.font = `${Math.floor(btnW * 0.088)}px Comic Sans MS, cursive`;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText(btn.sub, 0, 20);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  });
 }
 
 function menuClick(mx, my) {
-  // Check start button
-  const bx = W / 2, by = H * 0.91;
-  if (Math.abs(mx - bx) < 160 && Math.abs(my - by) < 35) {
-    startLevel1();
-  }
+  const btnW = Math.min(240, W * 0.27);
+  const btnH = 80;
+  const gap = Math.min(28, W * 0.03);
+  const totalW = 3 * btnW + 2 * gap;
+  const startX = W / 2 - totalW / 2;
+  const btnY = H * 0.76;
+
+  MENU_BUTTONS.forEach((btn, i) => {
+    const bx = startX + i * (btnW + gap);
+    if (mx >= bx && mx <= bx + btnW && my >= btnY && my <= btnY + btnH) {
+      btn.action();
+    }
+  });
 }
 
 // ============================================================
@@ -864,7 +883,7 @@ function updateLevel1(dt) {
     } else if (b.hit) {
       b.hitTimer += dt;
       b.r += 220 * dt; // expansion rapide — effet pop
-      if (b.hitTimer > 0.22) b.hit = false;
+      // pas de b.hit = false ici : le filtre ci-dessous gère la suppression
     } else {
       b.hitTimer += dt;
     }
@@ -954,8 +973,7 @@ function drawLevel1() {
   });
 
   if (l1Score >= L1_TARGET) {
-    octaveColor = 0.5;
-    transitionTo('level2');
+    transitionTo('menu');
   }
 }
 
@@ -972,7 +990,7 @@ function l1HandleNote(noteId) {
     updateHUD();
     flashKey(noteId);
     if (l1Score >= L1_TARGET) {
-      showMessage('🌟 Excellent ! Niveau 2 !', 1.5);
+      showMessage('🌟 Bravo ! Retour au menu…', 1.8);
     }
   } else {
     // Wrong note or no bubble - just play the note
@@ -1166,8 +1184,7 @@ function drawLevel2() {
   drawOctave(l2OctX, l2OctY + bounceL2, 52, octaveColor < 0.8);
 
   if (l2Score >= L2_TARGET) {
-    octaveColor = 0.9;
-    transitionTo('level3');
+    transitionTo('menu');
   }
 }
 
@@ -1195,7 +1212,7 @@ function l2HandleNote(noteId) {
     l2ShowingNote = false;
     l2WaitDelay = 1.5;
     if (l2Score >= L2_TARGET) {
-      showMessage('🌟 Bravo ! Niveau 3 — Le Grand Concert !', 1.8);
+      showMessage('🌟 Bravo ! Retour au menu…', 1.8);
     } else {
       showMessage('✅ Parfait !', 0.8);
     }
@@ -1650,10 +1667,11 @@ function updateTransition(dt) {
     transitionAlpha = 1;
     // Switch screens
     switch (transitionTarget) {
+      case 'menu':   initMenu();    break;
       case 'level1': startLevel1(); break;
       case 'level2': startLevel2(); break;
       case 'level3': startLevel3(); break;
-      case 'win':    initWin(); break;
+      case 'win':    initWin();     break;
     }
     transitionDir = -1;
   }
