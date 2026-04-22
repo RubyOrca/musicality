@@ -183,6 +183,27 @@
       box-shadow: 0 8px 30px rgba(255,215,0,0.6);
     }
 
+    /* Back to menu button */
+    #btn-back {
+      position: absolute;
+      top: 14px; right: 20px;
+      background: rgba(0,0,0,0.55);
+      border: 2px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.85);
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      font-size: 15px;
+      padding: 7px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: none;
+      z-index: 25;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #btn-back:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.5);
+    }
+
     /* Progress bar for level 3 */
     #progress-bar-container {
       position: absolute;
@@ -228,6 +249,9 @@
   <button class="start-btn" id="instr-btn">Allons-y ! 🎵</button>
 </div>
 
+<!-- Back to menu button -->
+<button id="btn-back">⬅ Menu</button>
+
 <!-- Progress bar (level 3) -->
 <div id="progress-bar-container">
   <div id="progress-bar"></div>
@@ -264,9 +288,11 @@ const MELODY = [
   { noteId: 1, beats: 1 }, { noteId: 0, beats: 4 },
 ];
 
-const BEAT_PX = 120;   // pixels per beat in level 3
-const BEAT_SPEED = 90; // pixels per second
-const HIT_ZONE_X = 160;
+const BEAT_SPEED = 250; // px/s — vitesse de défilement niveau 3
+const BEAT_DUR_L3 = 0.55; // secondes par beat
+const BEAT_PX = BEAT_DUR_L3 * BEAT_SPEED; // pixels par beat (137.5) — cohérent avec la vitesse
+const HIT_ZONE_X = 180;
+const LEAD_TIME = 3.0; // secondes de délai avant la première note
 
 // ============================================================
 // CANVAS + AUDIO SETUP
@@ -556,6 +582,8 @@ function drawStar5(c, x, y, r, color) {
 // PIANO KEYBOARD (HTML)
 // ============================================================
 const pianoBar = document.getElementById('piano-bar');
+const btnBack  = document.getElementById('btn-back');
+btnBack.addEventListener('click', () => transitionTo('menu'));
 NOTES.forEach(note => {
   const key = document.createElement('div');
   key.className = 'piano-key';
@@ -673,6 +701,7 @@ function initMenu() {
   gameState = 'menu';
   hideHUD();
   pianoBar.style.display = 'none';
+  btnBack.style.display = 'none';
   document.getElementById('progress-bar-container').style.display = 'none';
   octaveColor = 0;
   menuNoteSparkles = [];
@@ -842,6 +871,7 @@ function startLevel1() {
   showHUD('Niveau 1 — La Chasse aux Touches');
   updateHUD();
   pianoBar.style.display = 'flex';
+  btnBack.style.display = 'block';
 
   showInstruction(
     '🫧 La Chasse aux Touches',
@@ -1031,6 +1061,7 @@ function startLevel2() {
   updateHUD();
   showHUD('Niveau 2 — Le Chant des Étoiles');
   pianoBar.style.display = 'flex';
+  btnBack.style.display = 'block';
 
   // Arrange 7 platforms in a pleasing layout
   const cols = 4, rows = 2;
@@ -1257,7 +1288,6 @@ function startLevel3() {
   gameState = 'level3';
   lives = 3;
   l3Score = 0;
-  l3ElapsedTime = 0;
   l3NoteObjs = [];
   l3HitFeedbacks = [];
   l3FinishTimer = 0;
@@ -1267,38 +1297,35 @@ function startLevel3() {
   updateHUD();
   showHUD('Niveau 3 — Le Grand Concert 🎹');
   pianoBar.style.display = 'flex';
+  btnBack.style.display = 'block';
 
   document.getElementById('progress-bar-container').style.display = 'block';
   document.getElementById('progress-bar').style.width = '0%';
 
   // Build note objects from MELODY
-  const BEAT_DUR = 0.55; // seconds per beat
-  const SPAWN_X_OFFSET = W * 0.85; // notes start here (right side)
-  const TRACK_H = 90;
-  const TRACK_TOP = H * 0.12;
-
+  // startPx = position à t=0 : la note doit être à HIT_ZONE_X quand l3ElapsedTime = startTime
+  // currentX = startPx - l3ElapsedTime * BEAT_SPEED = HIT_ZONE_X + (startTime - l3ElapsedTime) * BEAT_SPEED
+  l3ElapsedTime = -LEAD_TIME; // délai avant la première note
   let timeAccum = 0;
-  MELODY.forEach((m, i) => {
+  MELODY.forEach((m) => {
     const n = NOTES[m.noteId];
-    const startPx = SPAWN_X_OFFSET + timeAccum * BEAT_SPEED;
-    const w = m.beats * BEAT_PX - 8;
+    const startPx = HIT_ZONE_X + timeAccum * BEAT_SPEED;
+    const w = Math.max(30, m.beats * BEAT_PX - 8);
     l3NoteObjs.push({
       note: n,
       startPx,
       width: w,
       beats: m.beats,
       startTime: timeAccum,
-      endTime: timeAccum + m.beats * BEAT_DUR,
       hit: false,
       missed: false,
-      hitAlpha: 0,
+      soundPlayed: false,
     });
-    timeAccum += m.beats * BEAT_DUR;
+    timeAccum += m.beats * BEAT_DUR_L3;
   });
 
-  // Total duration
   const totalBeats = MELODY.reduce((s, m) => s + m.beats, 0);
-  l3TotalTime = totalBeats * BEAT_DUR + 3;
+  l3TotalTime = totalBeats * BEAT_DUR_L3 + LEAD_TIME + 3;
 
   showInstruction(
     '🎹 Le Grand Concert',
@@ -1322,35 +1349,28 @@ function updateLevel3(dt) {
     n.currentX = n.startPx - scrollX;
   });
 
-  // Mark missed notes (passed the hit zone without being hit)
+  // Mark missed notes (passed the hit zone without being hit) — pas de pénalité de vie
   l3NoteObjs.forEach(n => {
     if (!n.hit && !n.missed && n.currentX + n.width < HIT_ZONE_X - 10) {
       n.missed = true;
-      lives = Math.max(0, lives - 1);
-      updateHUD();
-      if (lives === 0) {
-        setTimeout(() => initMenu(), 1500);
-        showMessage('😿 Courage, retente ta chance !', 2);
-      }
     }
   });
 
-  // Auto-play the note sound as it passes hit zone
+  // Son hint discret quand la note arrive sur la ligne de frappe
   l3NoteObjs.forEach(n => {
-    if (!n.soundPlayed && !n.missed && n.currentX <= HIT_ZONE_X + 30 && n.currentX >= HIT_ZONE_X - 30) {
+    if (!n.soundPlayed && !n.missed && n.currentX <= HIT_ZONE_X + 20 && n.currentX >= HIT_ZONE_X - 20) {
       n.soundPlayed = true;
-      // Hint: play the note softly
-      // playNote(n.note.freq, n.beats * 0.5, 0.1); // very quiet guide
+      playNote(n.note.freq, n.beats * BEAT_DUR_L3, 0.12);
     }
   });
 
-  // Progress bar
-  const progress = Math.min(1, l3ElapsedTime / l3TotalTime);
+  // Progress bar (basée sur le temps écoulé hors délai)
+  const progress = Math.min(1, (l3ElapsedTime + LEAD_TIME) / l3TotalTime);
   document.getElementById('progress-bar').style.width = (progress * 100) + '%';
 
   // Check if done
   const allDone = l3NoteObjs.every(n => n.hit || n.missed || n.currentX < -200);
-  if (allDone && !l3Done && l3ElapsedTime > 3) {
+  if (allDone && !l3Done && l3ElapsedTime > 0) {
     l3Done = true;
     l3FinishTimer = 2.5;
   }
@@ -1465,6 +1485,21 @@ function drawLevel3() {
   ctx.fillText('🎵 Au Clair de la Lune 🎵', W / 2, 55);
   ctx.restore();
 
+  // Compte à rebours pendant le délai
+  if (l3ElapsedTime < 0) {
+    const countdown = Math.ceil(-l3ElapsedTime);
+    const alpha = Math.min(1, (-l3ElapsedTime % 1) + 0.15);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${Math.floor(H * 0.18)}px Comic Sans MS, cursive`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 40;
+    ctx.fillText(countdown, W / 2, H * 0.55);
+    ctx.restore();
+  }
+
   // Instruction
   ctx.font = '18px Comic Sans MS, cursive';
   ctx.textAlign = 'center';
@@ -1531,6 +1566,7 @@ function initWin() {
   gameState = 'win';
   hideHUD();
   pianoBar.style.display = 'none';
+  btnBack.style.display = 'none';
   document.getElementById('progress-bar-container').style.display = 'none';
   winTimer = 0;
   octaveColor = 1;
