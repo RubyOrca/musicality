@@ -863,15 +863,15 @@ function updateLevel1(dt) {
       }
     } else if (b.hit) {
       b.hitTimer += dt;
-      b.r += 80 * dt;
-      if (b.hitTimer > 0.4) b.hit = false;
+      b.r += 220 * dt; // expansion rapide — effet pop
+      if (b.hitTimer > 0.22) b.hit = false;
     } else {
       b.hitTimer += dt;
     }
   });
 
   bubbles = bubbles.filter(b => {
-    if (b.hit) return b.hitTimer < 0.4;
+    if (b.hit) return b.hitTimer < 0.22;
     if (b.miss) return b.hitTimer < 0.5;
     return true;
   });
@@ -914,7 +914,9 @@ function drawLevel1() {
 
     ctx.save();
     ctx.translate(b.x, b.y);
-    const alpha = b.miss ? Math.max(0, 1 - b.hitTimer * 3) : 1;
+    const alpha = b.hit  ? Math.max(0, 1 - b.hitTimer / 0.22)
+                : b.miss ? Math.max(0, 1 - b.hitTimer * 3)
+                : 1;
 
     // Outer glow
     const grad2 = ctx.createRadialGradient(0, 0, b.r * 0.3, 0, 0, b.r);
