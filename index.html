@@ -1020,6 +1020,7 @@ function startLevel2() {
   lives = 3;
   updateHUD();
   showHUD('Niveau 2 — Le Chant des Étoiles');
+  pianoBar.style.display = 'flex';
 
   // Arrange 7 platforms in a pleasing layout
   const cols = 4, rows = 2;
@@ -1255,6 +1256,7 @@ function startLevel3() {
   activeNoteHighlight = -1;
   updateHUD();
   showHUD('Niveau 3 — Le Grand Concert 🎹');
+  pianoBar.style.display = 'flex';
 
   document.getElementById('progress-bar-container').style.display = 'block';
   document.getElementById('progress-bar').style.width = '0%';
