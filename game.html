@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎹 L'Odyssée des Notes Magiques</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a2e;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Bradley Hand', cursive;
+      user-select: none;
+    }
+
+    #gameCanvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+    }
+
+    /* Piano keyboard overlay */
+    #piano-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 8px 8px 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.3));
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .piano-key {
+      width: 80px;
+      height: 130px;
+      border-radius: 0 0 14px 14px;
+      border: 3px solid rgba(255,255,255,0.25);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 12px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+      transition: transform 0.08s, filter 0.08s, box-shadow 0.08s;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2);
+    }
+
+    .piano-key:hover { filter: brightness(1.2); }
+    .piano-key.pressed, .piano-key:active {
+      transform: scaleY(0.93) translateY(4px);
+      filter: brightness(1.5);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.3);
+    }
+
+    .key-note-name { font-size: 22px; line-height: 1; }
+    .key-shortcut {
+      font-size: 13px;
+      opacity: 0.6;
+      margin-top: 4px;
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* HUD overlay */
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #hud-score {
+      font-size: 28px;
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255,215,0,0.8);
+    }
+
+    #hud-level {
+      font-size: 20px;
+      color: white;
+      text-shadow: 0 0 8px rgba(255,255,255,0.6);
+    }
+
+    #hud-lives {
+      font-size: 28px;
+      letter-spacing: 4px;
+    }
+
+    /* Message overlay */
+    #message-overlay {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85);
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 30px 50px;
+      text-align: center;
+      color: white;
+      font-size: 32px;
+      display: none;
+      z-index: 20;
+      animation: popIn 0.3s ease-out;
+      backdrop-filter: blur(8px);
+    }
+
+    @keyframes popIn {
+      from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    /* Particle effect */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    /* Instruction popup */
+    #instruction {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #1a1a4e, #2a2a6e);
+      border: 3px solid rgba(255,215,0,0.5);
+      border-radius: 24px;
+      padding: 40px 60px;
+      text-align: center;
+      color: white;
+      max-width: 600px;
+      width: 90%;
+      display: none;
+      z-index: 30;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    }
+
+    #instruction h2 {
+      font-size: 36px;
+      color: #FFD700;
+      margin-bottom: 16px;
+      text-shadow: 0 0 20px rgba(255,215,0,0.5);
+    }
+
+    #instruction p {
+      font-size: 20px;
+      line-height: 1.6;
+      color: #ddd;
+      margin-bottom: 24px;
+    }
+
+    #instruction .start-btn {
+      background: linear-gradient(135deg, #FFD700, #FF8C00);
+      color: #0a0a2e;
+      border: none;
+      padding: 14px 40px;
+      font-size: 22px;
+      font-family: inherit;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+    }
+
+    #instruction .start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 30px rgba(255,215,0,0.6);
+    }
+
+    /* Progress bar for level 3 */
+    #progress-bar-container {
+      position: absolute;
+      bottom: 155px; left: 5%; right: 5%;
+      height: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      display: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #FFD700, #FF8C00);
+      border-radius: 6px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<!-- Piano keyboard -->
+<div id="piano-bar"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-score">⭐ 0</div>
+  <div id="hud-level">Niveau 1</div>
+  <div id="hud-lives">❤️❤️❤️</div>
+</div>
+
+<!-- Message overlay -->
+<div id="message-overlay"></div>
+
+<!-- Instructions popup -->
+<div id="instruction">
+  <h2 id="instr-title"></h2>
+  <p id="instr-text"></p>
+  <button class="start-btn" id="instr-btn">Allons-y ! 🎵</button>
+</div>
+
+<!-- Progress bar (level 3) -->
+<div id="progress-bar-container">
+  <div id="progress-bar"></div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const NOTES = [
+  { id: 0, name: 'DO',  key: 'a', color: '#FF4444', glow: '#FF000080', freq: 261.63 },
+  { id: 1, name: 'RÉ',  key: 's', color: '#FF8C00', glow: '#FF8C0080', freq: 293.66 },
+  { id: 2, name: 'MI',  key: 'd', color: '#FFD700', glow: '#FFD70080', freq: 329.63 },
+  { id: 3, name: 'FA',  key: 'f', color: '#44BB44', glow: '#44BB4480', freq: 349.23 },
+  { id: 4, name: 'SOL', key: 'g', color: '#4488FF', glow: '#4488FF80', freq: 392.00 },
+  { id: 5, name: 'LA',  key: 'h', color: '#9944CC', glow: '#9944CC80', freq: 440.00 },
+  { id: 6, name: 'SI',  key: 'j', color: '#FF69B4', glow: '#FF69B480', freq: 493.88 },
+];
+
+// "Au Clair de la Lune" (simplified)
+const MELODY = [
+  // Phrase 1: DO DO DO RÉ MI(long) RÉ(long)
+  { noteId: 0, beats: 1 }, { noteId: 0, beats: 1 }, { noteId: 0, beats: 1 },
+  { noteId: 1, beats: 1 }, { noteId: 2, beats: 2 }, { noteId: 1, beats: 2 },
+  // Phrase 2: DO MI RÉ RÉ DO(très long)
+  { noteId: 0, beats: 1 }, { noteId: 2, beats: 1 }, { noteId: 1, beats: 1 },
+  { noteId: 1, beats: 1 }, { noteId: 0, beats: 4 },
+  // Phrase 3: SOL SOL FA FA MI MI RÉ(long)
+  { noteId: 4, beats: 1 }, { noteId: 4, beats: 1 }, { noteId: 3, beats: 1 },
+  { noteId: 3, beats: 1 }, { noteId: 2, beats: 1 }, { noteId: 2, beats: 1 },
+  { noteId: 1, beats: 2 },
+  // Phrase 4: DO MI RÉ RÉ DO(très long)
+  { noteId: 0, beats: 1 }, { noteId: 2, beats: 1 }, { noteId: 1, beats: 1 },
+  { noteId: 1, beats: 1 }, { noteId: 0, beats: 4 },
+];
+
+const BEAT_PX = 120;   // pixels per beat in level 3
+const BEAT_SPEED = 90; // pixels per second
+const HIT_ZONE_X = 160;
+
+// ============================================================
+// CANVAS + AUDIO SETUP
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playNote(freq, duration = 1.2, volume = 0.4) {
+  const ac = getAudio();
+  const now = ac.currentTime;
+  const masterGain = ac.createGain();
+  masterGain.connect(ac.destination);
+
+  [1, 2, 3].forEach((harmonic, i) => {
+    const osc = ac.createOscillator();
+    const g   = ac.createGain();
+    osc.type = i === 0 ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(freq * harmonic, now);
+    const vol = volume * [1, 0.4, 0.15][i];
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(vol * 0.6, now + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + duration + 0.05);
+  });
+}
+
+function playSuccess() {
+  const ac = getAudio();
+  [523.25, 659.25, 783.99].forEach((f, i) => {
+    setTimeout(() => playNote(f, 0.5, 0.3), i * 150);
+  });
+}
+
+function playError() {
+  const ac = getAudio();
+  const now = ac.currentTime;
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(180, now);
+  osc.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+  g.gain.setValueAtTime(0.3, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+  osc.connect(g);
+  g.connect(ac.destination);
+  osc.start(now);
+  osc.stop(now + 0.35);
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let gameState = 'menu';
+let score = 0;
+let lives = 3;
+let stars = [];
+let particles = [];
+let octaveColor = 0; // 0 = gray, 1 = full color
+let octaveX = 80, octaveY = 0;
+let octaveVY = 0;
+let octaveJumping = false;
+
+// Level 1 state
+let bubbles = [];
+let l1Score = 0;
+const L1_TARGET = 12;
+let l1BubbleTimer = 0;
+let l1BubbleInterval = 1.8;
+
+// Level 2 state
+let platforms = [];
+let l2CurrentNote = -1;
+let l2Waiting = true;
+let l2WaitTimer = 0;
+let l2Score = 0;
+const L2_TARGET = 10;
+let l2OctaveTargetX = 0;
+let l2OctaveTargetY = 0;
+let l2Celebrating = false;
+
+// Level 3 state
+let l3Notes = [];
+let l3ScrollX = 0;
+let l3NoteQueue = [];
+let l3Pointer = 0;
+let l3Score = 0;
+let l3Done = false;
+let l3Started = false;
+let l3HitFeedback = null; // { x, y, color, timer }
+let activeNoteHighlight = -1;
+
+let lastTime = 0;
+
+// ============================================================
+// STARS (background)
+// ============================================================
+function initStars() {
+  stars = Array.from({ length: 180 }, () => ({
+    x: Math.random() * 1920,
+    y: Math.random() * 1080,
+    r: Math.random() * 2 + 0.5,
+    alpha: Math.random(),
+    speed: Math.random() * 0.5 + 0.2,
+  }));
+}
+initStars();
+
+function drawStars(dt) {
+  stars.forEach(s => {
+    s.alpha += s.speed * dt;
+    const a = (Math.sin(s.alpha) + 1) / 2 * 0.8 + 0.1;
+    ctx.beginPath();
+    ctx.arc(s.x % W, s.y % H, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fill();
+  });
+}
+
+// ============================================================
+// DRAW OCTAVE THE CAT
+// ============================================================
+function drawOctave(x, y, size, gray = false, hat = false) {
+  const col = gray ? '#888888' : '#FF9944';
+  const dark = gray ? '#555555' : '#CC6622';
+  const belly = gray ? '#AAAAAA' : '#FFCC88';
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Shadow
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.7, size * 0.5, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fill();
+
+  // Body
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.1, size * 0.42, size * 0.52, 0, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+
+  // Belly
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.18, size * 0.22, size * 0.3, 0, 0, Math.PI * 2);
+  ctx.fillStyle = belly;
+  ctx.fill();
+
+  // Tail
+  ctx.beginPath();
+  ctx.moveTo(size * 0.38, size * 0.35);
+  ctx.quadraticCurveTo(size * 0.9, size * 0.5, size * 0.7, size * -0.1);
+  ctx.strokeStyle = col;
+  ctx.lineWidth = size * 0.12;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.42, size * 0.36, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+
+  // Ears
+  [[-1, -0.72, -0.45, -1.05, -0.15, -0.78],
+   [ 1,  0.72,  0.45, -1.05,  0.15, -0.78]].forEach(([, x1, x2, y2, x3, y3]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1 * size * 0.28, -size * 0.65);
+    ctx.lineTo(x2 * size * 0.28, y2 * size);
+    ctx.lineTo(x3 * size * 0.28, y3 * size);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+    // Inner ear
+    ctx.beginPath();
+    ctx.moveTo(x1 * size * 0.18, -size * 0.62);
+    ctx.lineTo(x2 * size * 0.16, (y2 + 0.1) * size);
+    ctx.lineTo(x3 * size * 0.1, (y3 + 0.03) * size);
+    ctx.closePath();
+    ctx.fillStyle = gray ? '#AA7777' : '#FF7799';
+    ctx.fill();
+  });
+
+  // Eyes
+  ctx.fillStyle = '#222';
+  [-0.14, 0.14].forEach(ex => {
+    ctx.beginPath();
+    ctx.ellipse(ex * size, -size * 0.46, size * 0.075, size * 0.09, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Shine
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(ex * size + size * 0.03, -size * 0.5, size * 0.025, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#222';
+  });
+
+  // Nose
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35, size * 0.045, 0, Math.PI * 2);
+  ctx.fillStyle = gray ? '#999' : '#FF5577';
+  ctx.fill();
+
+  // Mouth
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.29, size * 0.07, 0.2, Math.PI - 0.2);
+  ctx.arc( size * 0.06, -size * 0.29, size * 0.07, 0.2, Math.PI - 0.2);
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = size * 0.025;
+  ctx.stroke();
+
+  // Whiskers
+  ctx.strokeStyle = gray ? 'rgba(120,120,120,0.7)' : 'rgba(200,150,80,0.8)';
+  ctx.lineWidth = size * 0.018;
+  [[-0.08, -0.33, -0.55, -0.38], [-0.08, -0.33, -0.55, -0.30], [-0.08, -0.33, -0.55, -0.23],
+   [ 0.08, -0.33,  0.55, -0.38], [ 0.08, -0.33,  0.55, -0.30], [ 0.08, -0.33,  0.55, -0.23]].forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1 * size, y1 * size);
+    ctx.lineTo(x2 * size, y2 * size);
+    ctx.stroke();
+  });
+
+  // Wizard hat (win screen)
+  if (hat) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.38, -size * 0.72);
+    ctx.lineTo( size * 0.38, -size * 0.72);
+    ctx.lineTo( size * 0.38, -size * 0.78);
+    ctx.lineTo(-size * 0.38, -size * 0.78);
+    ctx.closePath();
+    ctx.fillStyle = '#6644BB';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.35);
+    ctx.lineTo(-size * 0.32, -size * 0.78);
+    ctx.lineTo( size * 0.32, -size * 0.78);
+    ctx.closePath();
+    ctx.fillStyle = '#6644BB';
+    ctx.fill();
+
+    // Stars on hat
+    ['#FFD700','#FF69B4','#4488FF'].forEach((c, i) => {
+      ctx.beginPath();
+      const hx = (i - 1) * size * 0.18;
+      const hy = -size * (0.9 + i * 0.12);
+      drawStar5(ctx, hx, hy, size * 0.06, c);
+    });
+  }
+
+  ctx.restore();
+}
+
+function drawStar5(c, x, y, r, color) {
+  c.save();
+  c.translate(x, y);
+  c.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    i === 0 ? c.moveTo(Math.cos(angle) * r, Math.sin(angle) * r)
+            : c.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+  }
+  c.closePath();
+  c.fillStyle = color;
+  c.fill();
+  c.restore();
+}
+
+// ============================================================
+// PIANO KEYBOARD (HTML)
+// ============================================================
+const pianoBar = document.getElementById('piano-bar');
+NOTES.forEach(note => {
+  const key = document.createElement('div');
+  key.className = 'piano-key';
+  key.id = 'key-' + note.id;
+  key.style.background = `linear-gradient(to bottom, ${note.color}CC, ${note.color})`;
+  key.innerHTML = `<span class="key-note-name">${note.name}</span><span class="key-shortcut">[${note.key.toUpperCase()}]</span>`;
+  key.addEventListener('mousedown', () => handleNoteInput(note.id));
+  key.addEventListener('touchstart', (e) => { e.preventDefault(); handleNoteInput(note.id); });
+  pianoBar.appendChild(key);
+});
+
+function flashKey(noteId) {
+  const el = document.getElementById('key-' + noteId);
+  if (!el) return;
+  el.classList.add('pressed');
+  setTimeout(() => el.classList.remove('pressed'), 150);
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnParticles(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+    const speed = 100 + Math.random() * 150;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 80,
+      color,
+      r: 5 + Math.random() * 8,
+      life: 1,
+      decay: 0.8 + Math.random() * 0.5,
+    });
+  }
+}
+
+function updateParticles(dt) {
+  particles = particles.filter(p => p.life > 0.02);
+  particles.forEach(p => {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 200 * dt;
+    p.life -= p.decay * dt;
+    p.r *= 0.99;
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+    ctx.fill();
+  });
+}
+
+// ============================================================
+// HUD
+// ============================================================
+const hudEl    = document.getElementById('hud');
+const hudScore = document.getElementById('hud-score');
+const hudLevel = document.getElementById('hud-level');
+const hudLives = document.getElementById('hud-lives');
+
+function showHUD(levelName) {
+  hudEl.style.display = 'flex';
+  hudLevel.textContent = levelName;
+}
+function hideHUD() { hudEl.style.display = 'none'; }
+function updateHUD() {
+  hudScore.textContent = `⭐ ${score}`;
+  hudLives.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+}
+
+// ============================================================
+// MESSAGE OVERLAY
+// ============================================================
+const msgEl = document.getElementById('message-overlay');
+let msgTimer = 0;
+
+function showMessage(text, duration = 1.2) {
+  msgEl.innerHTML = text;
+  msgEl.style.display = 'block';
+  msgTimer = duration;
+}
+
+// ============================================================
+// INSTRUCTION POPUP
+// ============================================================
+const instrEl   = document.getElementById('instruction');
+const instrTitle = document.getElementById('instr-title');
+const instrText  = document.getElementById('instr-text');
+const instrBtn   = document.getElementById('instr-btn');
+
+function showInstruction(title, text, btnText, onStart) {
+  instrTitle.textContent = title;
+  instrText.innerHTML = text;
+  instrBtn.textContent = btnText;
+  instrEl.style.display = 'block';
+  instrBtn.onclick = () => {
+    instrEl.style.display = 'none';
+    onStart();
+  };
+}
+
+// ============================================================
+// SCREEN: MENU
+// ============================================================
+let menuOctaneY = 0;
+let menuTimer = 0;
+let menuNoteSparkles = [];
+
+function initMenu() {
+  gameState = 'menu';
+  hideHUD();
+  pianoBar.style.display = 'none';
+  document.getElementById('progress-bar-container').style.display = 'none';
+  octaveColor = 0;
+  menuNoteSparkles = [];
+}
+
+function drawMenu(dt) {
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0a0a2e');
+  grad.addColorStop(1, '#1a0a3e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars(dt);
+
+  menuTimer += dt;
+
+  // Floating note sparkles
+  if (Math.random() < dt * 3) {
+    menuNoteSparkles.push({
+      x: Math.random() * W,
+      y: H + 20,
+      note: NOTES[Math.floor(Math.random() * 7)],
+      vy: -(40 + Math.random() * 60),
+      vx: (Math.random() - 0.5) * 30,
+      alpha: 1,
+      size: 18 + Math.random() * 18,
+    });
+  }
+  menuNoteSparkles = menuNoteSparkles.filter(s => s.alpha > 0.05 && s.y > -50);
+  menuNoteSparkles.forEach(s => {
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.alpha -= 0.3 * dt;
+    ctx.save();
+    ctx.globalAlpha = s.alpha;
+    ctx.font = `bold ${s.size}px Comic Sans MS, cursive`;
+    ctx.fillStyle = s.note.color;
+    ctx.shadowColor = s.note.color;
+    ctx.shadowBlur = 12;
+    ctx.fillText(s.note.name, s.x, s.y);
+    ctx.restore();
+  });
+
+  // Title glow
+  const titleY = H * 0.22;
+  ctx.save();
+  ctx.shadowColor = '#FFD700';
+  ctx.shadowBlur = 30;
+  ctx.font = `bold ${Math.floor(W * 0.065)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText("L'Odyssée des Notes Magiques", W / 2, titleY);
+  ctx.restore();
+
+  // Subtitle
+  ctx.save();
+  ctx.font = `${Math.floor(W * 0.025)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(200,200,255,0.8)';
+  ctx.fillText('✨ Aide Octave à retrouver ses couleurs ! ✨', W / 2, titleY + 50);
+  ctx.restore();
+
+  // Octave (gray, bouncing)
+  const bounce = Math.sin(menuTimer * 2) * 10;
+  drawOctave(W / 2, H * 0.52 + bounce, 80, true);
+
+  // Story text
+  ctx.save();
+  ctx.font = `${Math.floor(W * 0.022)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#CCCCEE';
+  const story = 'Octave le chat a perdu toutes ses couleurs…';
+  const story2 = 'Joue les bonnes notes pour lui rendre la vie !';
+  ctx.fillText(story,  W / 2, H * 0.68);
+  ctx.fillText(story2, W / 2, H * 0.72);
+  ctx.restore();
+
+  // Note colors legend
+  const legendY = H * 0.81;
+  NOTES.forEach((n, i) => {
+    const lx = W / 2 + (i - 3) * (W * 0.07);
+    ctx.beginPath();
+    ctx.arc(lx, legendY, 18, 0, Math.PI * 2);
+    ctx.fillStyle = n.color;
+    ctx.shadowColor = n.color;
+    ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 13px Comic Sans MS, cursive';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.fillText(n.name, lx, legendY + 33);
+  });
+
+  // Start button (pulsing)
+  const pulse = 1 + Math.sin(menuTimer * 3) * 0.06;
+  ctx.save();
+  ctx.translate(W / 2, H * 0.91);
+  ctx.scale(pulse, pulse);
+  const btnW = 280, btnH = 60;
+  const btnGrad = ctx.createLinearGradient(-btnW/2, 0, btnW/2, 0);
+  btnGrad.addColorStop(0, '#FF6644');
+  btnGrad.addColorStop(0.5, '#FFD700');
+  btnGrad.addColorStop(1, '#FF6644');
+  ctx.beginPath();
+  ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 30);
+  ctx.fillStyle = btnGrad;
+  ctx.shadowColor = '#FFD700';
+  ctx.shadowBlur = 20;
+  ctx.fill();
+  ctx.font = `bold 26px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#0a0a2e';
+  ctx.shadowBlur = 0;
+  ctx.fillText('🎹 Commencer l\'aventure !', 0, 9);
+  ctx.restore();
+}
+
+function menuClick(mx, my) {
+  // Check start button
+  const bx = W / 2, by = H * 0.91;
+  if (Math.abs(mx - bx) < 160 && Math.abs(my - by) < 35) {
+    startLevel1();
+  }
+}
+
+// ============================================================
+// LEVEL 1: LA CHASSE AUX TOUCHES
+// ============================================================
+function startLevel1() {
+  gameState = 'level1';
+  score = 0; lives = 3; l1Score = 0; bubbles = [];
+  l1BubbleTimer = 0; l1BubbleInterval = 1.8;
+  particles = [];
+  showHUD('Niveau 1 — La Chasse aux Touches');
+  updateHUD();
+  pianoBar.style.display = 'flex';
+
+  showInstruction(
+    '🫧 La Chasse aux Touches',
+    'Des bulles colorées vont tomber du ciel !<br>Regarde la couleur et le nom de la note,<br>puis clique sur la bonne touche du piano. 🎹<br><br>' +
+    '🎯 Attrape <strong>12 bulles</strong> pour passer au niveau suivant !',
+    '🎵 Jouons !',
+    () => {}
+  );
+}
+
+function spawnBubble() {
+  const note = NOTES[Math.floor(Math.random() * 7)];
+  const x = 80 + Math.random() * (W - 160);
+  bubbles.push({
+    note, x, y: -40,
+    r: 38,
+    speed: 90 + Math.random() * 50,
+    wobble: Math.random() * Math.PI * 2,
+    hit: false,
+    hitTimer: 0,
+    miss: false,
+  });
+}
+
+function updateLevel1(dt) {
+  if (instrEl.style.display === 'block') return;
+
+  l1BubbleTimer += dt;
+  if (l1BubbleTimer >= l1BubbleInterval) {
+    l1BubbleTimer = 0;
+    l1BubbleInterval = Math.max(1.0, 1.8 - l1Score * 0.04);
+    spawnBubble();
+  }
+
+  const pianoTop = H - 155;
+  bubbles.forEach(b => {
+    if (!b.hit && !b.miss) {
+      b.y += b.speed * dt;
+      b.wobble += dt * 1.5;
+      b.x += Math.sin(b.wobble) * 0.8;
+      if (b.y > pianoTop) {
+        b.miss = true;
+        lives--;
+        updateHUD();
+        playError();
+        if (lives <= 0) {
+          setTimeout(() => initMenu(), 1200);
+          showMessage('😿 Oh non… Retour au début !', 2);
+        }
+      }
+    } else if (b.hit) {
+      b.hitTimer += dt;
+      b.r += 80 * dt;
+      if (b.hitTimer > 0.4) b.hit = false;
+    } else {
+      b.hitTimer += dt;
+    }
+  });
+
+  bubbles = bubbles.filter(b => {
+    if (b.hit) return b.hitTimer < 0.4;
+    if (b.miss) return b.hitTimer < 0.5;
+    return true;
+  });
+}
+
+function drawLevel1() {
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, H - 150);
+  grad.addColorStop(0, '#0a0a2e');
+  grad.addColorStop(1, '#0d1545');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H - 150);
+
+  drawStars(0);
+
+  // "Catch line" just above piano
+  const lineY = H - 160;
+  ctx.setLineDash([12, 8]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, lineY);
+  ctx.lineTo(W, lineY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Octave watching from the side
+  const octYL1 = H - 200;
+  drawOctave(60, octYL1, 50, octaveColor < 0.5);
+
+  // Progress text
+  ctx.font = 'bold 20px Comic Sans MS, cursive';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,200,0.7)';
+  ctx.fillText(`🎯 ${l1Score} / ${L1_TARGET}`, 20, H - 165);
+
+  // Draw bubbles
+  bubbles.forEach(b => {
+    if (b.miss && b.hitTimer > 0.3) return;
+
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    const alpha = b.miss ? Math.max(0, 1 - b.hitTimer * 3) : 1;
+
+    // Outer glow
+    const grad2 = ctx.createRadialGradient(0, 0, b.r * 0.3, 0, 0, b.r);
+    grad2.addColorStop(0, b.note.color + 'CC');
+    grad2.addColorStop(0.7, b.note.color + '88');
+    grad2.addColorStop(1, b.note.color + '22');
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad2;
+    ctx.fill();
+
+    // Bubble border
+    ctx.strokeStyle = b.note.color;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = b.note.color;
+    ctx.shadowBlur = 15;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Shine
+    ctx.beginPath();
+    ctx.arc(-b.r * 0.25, -b.r * 0.3, b.r * 0.2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fill();
+
+    // Note name
+    ctx.font = `bold ${b.r * 0.7}px Comic Sans MS, cursive`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(b.note.name, 0, 0);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  });
+
+  if (l1Score >= L1_TARGET) {
+    octaveColor = 0.5;
+    transitionTo('level2');
+  }
+}
+
+function l1HandleNote(noteId) {
+  const hitIdx = bubbles.findIndex(b => !b.hit && !b.miss && b.note.id === noteId);
+  if (hitIdx !== -1) {
+    const b = bubbles[hitIdx];
+    b.hit = true;
+    b.hitTimer = 0;
+    spawnParticles(b.x, b.y, b.note.color, 16);
+    playNote(b.note.freq, 0.8);
+    score += 10;
+    l1Score++;
+    updateHUD();
+    flashKey(noteId);
+    if (l1Score >= L1_TARGET) {
+      showMessage('🌟 Excellent ! Niveau 2 !', 1.5);
+    }
+  } else {
+    // Wrong note or no bubble - just play the note
+    const note = NOTES[noteId];
+    playNote(note.freq, 0.6);
+    flashKey(noteId);
+  }
+}
+
+// ============================================================
+// LEVEL 2: LE CHANT DES ÉTOILES
+// ============================================================
+let l2Platforms = [];
+let l2OctX = 0, l2OctY = 0;
+let l2TargetX = 0, l2TargetY = 0;
+let l2Moving = false;
+let l2Expected = -1;
+let l2WaitDelay = 0;
+let l2ShowingNote = false;
+let l2NoteTimer = 0;
+let l2FlashPlatform = -1;
+let l2FlashTimer = 0;
+
+function startLevel2() {
+  gameState = 'level2';
+  l2Score = 0; particles = [];
+  lives = 3;
+  updateHUD();
+  showHUD('Niveau 2 — Le Chant des Étoiles');
+
+  // Arrange 7 platforms in a pleasing layout
+  const cols = 4, rows = 2;
+  l2Platforms = [];
+  const pw = 110, ph = 48;
+  const startX = W * 0.15, startY = H * 0.28;
+  const gx = (W * 0.72) / (cols - 1);
+  const gy = (H * 0.32) / (rows - 1);
+  NOTES.forEach((note, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    l2Platforms.push({
+      note,
+      x: startX + col * gx,
+      y: startY + row * gy,
+      w: pw, h: ph,
+      lit: false,
+      litTimer: 0,
+    });
+  });
+
+  l2OctX = W * 0.1;
+  l2OctY = H * 0.28 + 40;
+  l2TargetX = l2OctX;
+  l2TargetY = l2OctY;
+  l2Moving = false;
+  l2Expected = -1;
+  l2WaitDelay = 1.0;
+  l2ShowingNote = false;
+
+  showInstruction(
+    '⭐ Le Chant des Étoiles',
+    'Le jeu va jouer un son de note.<br>Écoute bien, puis clique sur la plateforme<br>qui porte le <strong>bon nom de note</strong> !<br><br>' +
+    'Octave va sauter vers elle si tu as raison ! 🐱',
+    '🎵 J\'écoute !',
+    () => { l2WaitDelay = 1.0; }
+  );
+}
+
+function updateLevel2(dt) {
+  if (instrEl.style.display === 'block') return;
+
+  // Move Octave toward target
+  const dx = l2TargetX - l2OctX;
+  const dy = l2TargetY - l2OctY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > 4) {
+    l2OctX += dx * 8 * dt;
+    l2OctY += dy * 8 * dt;
+    l2Moving = true;
+  } else {
+    l2OctX = l2TargetX;
+    l2OctY = l2TargetY;
+    l2Moving = false;
+  }
+
+  // Platform flash
+  l2Platforms.forEach(p => {
+    if (p.lit) {
+      p.litTimer += dt;
+      if (p.litTimer > 1.0) { p.lit = false; p.litTimer = 0; }
+    }
+  });
+
+  // Wait to play next note
+  if (!l2ShowingNote && !l2Moving) {
+    l2WaitDelay -= dt;
+    if (l2WaitDelay <= 0) {
+      l2WaitDelay = 2.5;
+      // Pick random note
+      l2Expected = Math.floor(Math.random() * 7);
+      const n = NOTES[l2Expected];
+      playNote(n.freq, 1.0);
+      l2ShowingNote = true;
+      l2NoteTimer = 0;
+    }
+  }
+
+  if (l2ShowingNote) {
+    l2NoteTimer += dt;
+  }
+}
+
+function drawLevel2() {
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0d0d30');
+  grad.addColorStop(0.5, '#1a1040');
+  grad.addColorStop(1, '#0a0a25');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  drawStars(0);
+
+  // Ground
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fillRect(0, H - 155, W, 155);
+
+  // Title hint
+  if (l2ShowingNote && l2Expected >= 0) {
+    const n = NOTES[l2Expected];
+    ctx.save();
+    ctx.font = 'bold 32px Comic Sans MS, cursive';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = n.color;
+    ctx.shadowColor = n.color;
+    ctx.shadowBlur = 20;
+    ctx.fillText(`🎵 Quelle note entends-tu ? — ${n.name}`, W / 2, 90);
+    ctx.restore();
+  } else {
+    ctx.font = 'bold 26px Comic Sans MS, cursive';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(200,200,255,0.5)';
+    ctx.fillText('🎵 Écoute la note, puis clique sur la bonne plateforme !', W / 2, 90);
+  }
+
+  // Progress
+  ctx.font = 'bold 20px Comic Sans MS, cursive';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,200,0.7)';
+  ctx.fillText(`⭐ ${l2Score} / ${L2_TARGET}`, W / 2, H - 170);
+
+  // Draw platforms
+  l2Platforms.forEach(p => {
+    const glow = p.lit ? (Math.sin(p.litTimer * 10) * 0.5 + 0.5) : 0;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.roundRect(-p.w/2 + 5, p.h/2 + 5, p.w, 12, 6);
+    ctx.fill();
+
+    // Platform body
+    const pGrad = ctx.createLinearGradient(0, -p.h/2, 0, p.h/2);
+    pGrad.addColorStop(0, p.note.color + 'FF');
+    pGrad.addColorStop(1, p.note.color + 'AA');
+    ctx.beginPath();
+    ctx.roundRect(-p.w/2, -p.h/2, p.w, p.h, 12);
+    ctx.fillStyle = pGrad;
+    ctx.shadowColor = p.note.color;
+    ctx.shadowBlur = 10 + glow * 25;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Note name
+    ctx.font = 'bold 24px Comic Sans MS, cursive';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.textBaseline = 'middle';
+    ctx.textShadow = '';
+    ctx.fillText(p.note.name, 0, 0);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  });
+
+  // Octave
+  const bounceL2 = l2Moving ? Math.sin(Date.now() / 80) * 6 : 0;
+  drawOctave(l2OctX, l2OctY + bounceL2, 52, octaveColor < 0.8);
+
+  if (l2Score >= L2_TARGET) {
+    octaveColor = 0.9;
+    transitionTo('level3');
+  }
+}
+
+function l2HandleNote(noteId) {
+  if (!l2ShowingNote || l2Moving) return;
+  if (instrEl.style.display === 'block') return;
+
+  flashKey(noteId);
+  playNote(NOTES[noteId].freq, 0.8);
+
+  if (noteId === l2Expected) {
+    // Correct!
+    const p = l2Platforms.find(pl => pl.note.id === noteId);
+    if (p) {
+      l2TargetX = p.x;
+      l2TargetY = p.y - 60;
+      p.lit = true;
+      p.litTimer = 0;
+      spawnParticles(p.x, p.y, p.note.color, 14);
+    }
+    playSuccess();
+    score += 15;
+    l2Score++;
+    updateHUD();
+    l2ShowingNote = false;
+    l2WaitDelay = 1.5;
+    if (l2Score >= L2_TARGET) {
+      showMessage('🌟 Bravo ! Niveau 3 — Le Grand Concert !', 1.8);
+    } else {
+      showMessage('✅ Parfait !', 0.8);
+    }
+  } else {
+    // Wrong
+    lives--;
+    updateHUD();
+    playError();
+    showMessage('❌ Écoute encore…', 1.0);
+    if (lives <= 0) {
+      setTimeout(() => initMenu(), 1500);
+      showMessage('😿 Aïe ! Retour au début…', 2);
+    } else {
+      // Replay the note
+      setTimeout(() => {
+        if (l2Expected >= 0) playNote(NOTES[l2Expected].freq, 1.0);
+      }, 600);
+    }
+  }
+}
+
+// ============================================================
+// LEVEL 3: LE GRAND CONCERT
+// ============================================================
+let l3ElapsedTime = 0;
+let l3NoteObjs = [];
+let l3HitFeedbacks = [];
+let l3FinishTimer = 0;
+
+function startLevel3() {
+  gameState = 'level3';
+  lives = 3;
+  l3Score = 0;
+  l3ElapsedTime = 0;
+  l3NoteObjs = [];
+  l3HitFeedbacks = [];
+  l3FinishTimer = 0;
+  l3Done = false;
+  particles = [];
+  activeNoteHighlight = -1;
+  updateHUD();
+  showHUD('Niveau 3 — Le Grand Concert 🎹');
+
+  document.getElementById('progress-bar-container').style.display = 'block';
+  document.getElementById('progress-bar').style.width = '0%';
+
+  // Build note objects from MELODY
+  const BEAT_DUR = 0.55; // seconds per beat
+  const SPAWN_X_OFFSET = W * 0.85; // notes start here (right side)
+  const TRACK_H = 90;
+  const TRACK_TOP = H * 0.12;
+
+  let timeAccum = 0;
+  MELODY.forEach((m, i) => {
+    const n = NOTES[m.noteId];
+    const startPx = SPAWN_X_OFFSET + timeAccum * BEAT_SPEED;
+    const w = m.beats * BEAT_PX - 8;
+    l3NoteObjs.push({
+      note: n,
+      startPx,
+      width: w,
+      beats: m.beats,
+      startTime: timeAccum,
+      endTime: timeAccum + m.beats * BEAT_DUR,
+      hit: false,
+      missed: false,
+      hitAlpha: 0,
+    });
+    timeAccum += m.beats * BEAT_DUR;
+  });
+
+  // Total duration
+  const totalBeats = MELODY.reduce((s, m) => s + m.beats, 0);
+  l3TotalTime = totalBeats * BEAT_DUR + 3;
+
+  showInstruction(
+    '🎹 Le Grand Concert',
+    'La chanson "Au Clair de la Lune" va défiler !<br>Quand une note colorée arrive à la <strong>ligne dorée</strong>,<br>appuie sur la bonne touche du piano ! 🎵<br><br>' +
+    'Plus tu es précis, plus tu gagnes d\'étoiles !',
+    '🎶 Commençons !',
+    () => {}
+  );
+}
+
+let l3TotalTime = 30;
+
+function updateLevel3(dt) {
+  if (instrEl.style.display === 'block') return;
+
+  l3ElapsedTime += dt;
+  const scrollX = l3ElapsedTime * BEAT_SPEED;
+
+  // Update note x positions
+  l3NoteObjs.forEach(n => {
+    n.currentX = n.startPx - scrollX;
+  });
+
+  // Mark missed notes (passed the hit zone without being hit)
+  l3NoteObjs.forEach(n => {
+    if (!n.hit && !n.missed && n.currentX + n.width < HIT_ZONE_X - 10) {
+      n.missed = true;
+      lives = Math.max(0, lives - 1);
+      updateHUD();
+      if (lives === 0) {
+        setTimeout(() => initMenu(), 1500);
+        showMessage('😿 Courage, retente ta chance !', 2);
+      }
+    }
+  });
+
+  // Auto-play the note sound as it passes hit zone
+  l3NoteObjs.forEach(n => {
+    if (!n.soundPlayed && !n.missed && n.currentX <= HIT_ZONE_X + 30 && n.currentX >= HIT_ZONE_X - 30) {
+      n.soundPlayed = true;
+      // Hint: play the note softly
+      // playNote(n.note.freq, n.beats * 0.5, 0.1); // very quiet guide
+    }
+  });
+
+  // Progress bar
+  const progress = Math.min(1, l3ElapsedTime / l3TotalTime);
+  document.getElementById('progress-bar').style.width = (progress * 100) + '%';
+
+  // Check if done
+  const allDone = l3NoteObjs.every(n => n.hit || n.missed || n.currentX < -200);
+  if (allDone && !l3Done && l3ElapsedTime > 3) {
+    l3Done = true;
+    l3FinishTimer = 2.5;
+  }
+  if (l3Done) {
+    l3FinishTimer -= dt;
+    if (l3FinishTimer <= 0) {
+      transitionTo('win');
+    }
+  }
+
+  // Hit feedbacks
+  l3HitFeedbacks = l3HitFeedbacks.filter(f => f.life > 0);
+  l3HitFeedbacks.forEach(f => {
+    f.life -= dt * 2;
+    f.y -= 60 * dt;
+  });
+}
+
+function drawLevel3() {
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#050520');
+  grad.addColorStop(0.6, '#0d0a35');
+  grad.addColorStop(1, '#1a0a30');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  drawStars(0);
+
+  const TRACK_Y = H * 0.38;
+  const TRACK_H = 80;
+
+  // Track background
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fillRect(0, TRACK_Y - 10, W, TRACK_H + 20);
+
+  // Hit zone line
+  ctx.save();
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#FFD700';
+  ctx.shadowBlur = 20;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(HIT_ZONE_X, TRACK_Y - 20);
+  ctx.lineTo(HIT_ZONE_X, TRACK_Y + TRACK_H + 20);
+  ctx.stroke();
+  ctx.restore();
+
+  // Draw scrolling notes
+  l3NoteObjs.forEach(n => {
+    if (n.currentX > W + 50 || n.currentX + n.width < -50) return;
+
+    const x = n.currentX;
+    const y = TRACK_Y;
+    const h = TRACK_H;
+    const w = n.width;
+    const alpha = n.missed ? 0.25 : (n.hit ? Math.max(0, 1 - (l3ElapsedTime - n.hitTime) * 3) : 1);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Note block
+    const ng = ctx.createLinearGradient(x, y, x, y + h);
+    ng.addColorStop(0, n.note.color + 'EE');
+    ng.addColorStop(1, n.note.color + '99');
+    ctx.beginPath();
+    ctx.roundRect(x, y + 5, w, h - 10, 10);
+    ctx.fillStyle = ng;
+    ctx.shadowColor = n.note.color;
+    ctx.shadowBlur = n.missed ? 0 : 18;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Note name
+    if (w > 50) {
+      ctx.font = `bold ${Math.min(24, w * 0.35)}px Comic Sans MS, cursive`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'white';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.note.name, x + w / 2, y + h / 2);
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    ctx.restore();
+  });
+
+  // Hit feedbacks
+  l3HitFeedbacks.forEach(f => {
+    ctx.save();
+    ctx.globalAlpha = f.life;
+    ctx.font = 'bold 26px Comic Sans MS, cursive';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = f.color;
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 12;
+    ctx.fillText('✓', f.x, f.y);
+    ctx.restore();
+  });
+
+  // Song title
+  ctx.save();
+  ctx.font = 'bold 28px Comic Sans MS, cursive';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,215,0,0.8)';
+  ctx.shadowColor = '#FFD700';
+  ctx.shadowBlur = 10;
+  ctx.fillText('🎵 Au Clair de la Lune 🎵', W / 2, 55);
+  ctx.restore();
+
+  // Instruction
+  ctx.font = '18px Comic Sans MS, cursive';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(200,200,255,0.6)';
+  ctx.fillText('Appuie sur la bonne touche quand la note arrive à la ligne dorée !', W / 2, 90);
+
+  // Octave
+  const jumpAnim = Math.sin(l3ElapsedTime * 4) * 8;
+  drawOctave(W - 100, H * 0.62 + jumpAnim, 60, false);
+
+  // Score big
+  ctx.save();
+  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,200,0.7)';
+  ctx.fillText(`Notes réussies : ${l3Score} / ${MELODY.length}`, W / 2, H - 170);
+  ctx.restore();
+}
+
+function l3HandleNote(noteId) {
+  if (instrEl.style.display === 'block') return;
+
+  flashKey(noteId);
+  const note = NOTES[noteId];
+
+  // Find nearest note in hit window
+  const hitWindow = 60; // pixels
+  let bestNote = null;
+  let bestDist = Infinity;
+
+  l3NoteObjs.forEach(n => {
+    if (n.hit || n.missed) return;
+    const centerX = n.currentX + n.width / 2;
+    const dist = Math.abs(centerX - HIT_ZONE_X);
+    if (dist < hitWindow + n.width / 2 && dist < bestDist) {
+      bestDist = dist;
+      bestNote = n;
+    }
+  });
+
+  if (bestNote && bestNote.note.id === noteId) {
+    // Hit!
+    bestNote.hit = true;
+    bestNote.hitTime = l3ElapsedTime;
+    playNote(note.freq, bestNote.beats * 0.5, 0.5);
+    spawnParticles(HIT_ZONE_X, H * 0.38 + 40, note.color, 12);
+    l3HitFeedbacks.push({ x: HIT_ZONE_X, y: H * 0.30, color: note.color, life: 1 });
+    score += 20;
+    l3Score++;
+    updateHUD();
+  } else {
+    // Just play the note
+    playNote(note.freq, 0.6, 0.4);
+  }
+}
+
+// ============================================================
+// WIN SCREEN
+// ============================================================
+let winTimer = 0;
+let confetti = [];
+
+function initWin() {
+  gameState = 'win';
+  hideHUD();
+  pianoBar.style.display = 'none';
+  document.getElementById('progress-bar-container').style.display = 'none';
+  winTimer = 0;
+  octaveColor = 1;
+  confetti = Array.from({ length: 80 }, () => ({
+    x: Math.random() * W,
+    y: -20 - Math.random() * 100,
+    vx: (Math.random() - 0.5) * 80,
+    vy: 60 + Math.random() * 100,
+    color: NOTES[Math.floor(Math.random() * 7)].color,
+    rot: Math.random() * Math.PI * 2,
+    rotV: (Math.random() - 0.5) * 4,
+    w: 10 + Math.random() * 12,
+    h: 5 + Math.random() * 6,
+  }));
+
+  // Play victory fanfare
+  const fanfare = [261.63, 329.63, 392.00, 523.25];
+  fanfare.forEach((f, i) => setTimeout(() => playNote(f, 0.8, 0.4), i * 200));
+}
+
+function drawWin(dt) {
+  winTimer += dt;
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0a1a3e');
+  grad.addColorStop(1, '#1a0a3e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  drawStars(dt);
+
+  // Confetti
+  confetti.forEach(c => {
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+    c.rot += c.rotV * dt;
+    if (c.y > H + 20) { c.y = -20; c.x = Math.random() * W; }
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.rot);
+    ctx.fillStyle = c.color;
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.roundRect(-c.w/2, -c.h/2, c.w, c.h, 3);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Title
+  const pulse = 1 + Math.sin(winTimer * 3) * 0.04;
+  ctx.save();
+  ctx.translate(W / 2, H * 0.18);
+  ctx.scale(pulse, pulse);
+  ctx.font = `bold ${Math.floor(W * 0.07)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFD700';
+  ctx.shadowColor = '#FFD700';
+  ctx.shadowBlur = 30;
+  ctx.fillText('🎉 BRAVO ! 🎉', 0, 0);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  ctx.font = `bold ${Math.floor(W * 0.03)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'white';
+  ctx.fillText('Octave a retrouvé toutes ses couleurs !', W / 2, H * 0.28);
+
+  // Octave with wizard hat, full color
+  const bounceWin = Math.sin(winTimer * 2.5) * 12;
+  drawOctave(W / 2, H * 0.52 + bounceWin, 95, false, true);
+
+  // Stars
+  const numStars = Math.min(5, Math.floor(score / 40));
+  for (let i = 0; i < 5; i++) {
+    const sx = W / 2 + (i - 2) * 60;
+    const sy = H * 0.73;
+    ctx.save();
+    ctx.shadowColor = i < numStars ? '#FFD700' : 'transparent';
+    ctx.shadowBlur = 15;
+    ctx.font = '40px serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = i < numStars ? '#FFD700' : '#333355';
+    ctx.fillText('★', sx, sy);
+    ctx.restore();
+  }
+
+  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText(`Score final : ${score} points ⭐`, W / 2, H * 0.79);
+
+  // Note sequence reminder
+  const noteColors = [0, 0, 0, 1, 2, 1, 0, 2, 1, 1, 0].map(i => NOTES[i].color);
+  ctx.font = '14px Comic Sans MS, cursive';
+  ctx.fillStyle = 'rgba(200,200,255,0.6)';
+  ctx.fillText('Tu as joué : Au Clair de la Lune ! 🎵', W / 2, H * 0.84);
+
+  // Replay button
+  const bpulse = 1 + Math.sin(winTimer * 4) * 0.05;
+  ctx.save();
+  ctx.translate(W / 2, H * 0.91);
+  ctx.scale(bpulse, bpulse);
+  const rGrad = ctx.createLinearGradient(-130, 0, 130, 0);
+  rGrad.addColorStop(0, '#4488FF');
+  rGrad.addColorStop(1, '#44BBFF');
+  ctx.beginPath();
+  ctx.roundRect(-130, -28, 260, 56, 28);
+  ctx.fillStyle = rGrad;
+  ctx.shadowColor = '#4488FF';
+  ctx.shadowBlur = 20;
+  ctx.fill();
+  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.fillStyle = 'white';
+  ctx.shadowBlur = 0;
+  ctx.textAlign = 'center';
+  ctx.fillText('🔄 Rejouer', 0, 8);
+  ctx.restore();
+}
+
+function winClick(mx, my) {
+  if (Math.abs(mx - W/2) < 140 && Math.abs(my - H * 0.91) < 32) {
+    initMenu();
+  }
+}
+
+// ============================================================
+// TRANSITIONS
+// ============================================================
+let transitioning = false;
+let transitionAlpha = 0;
+let transitionTarget = '';
+let transitionDir = 1; // 1 = fade in, -1 = fade out
+
+function transitionTo(target) {
+  if (transitioning) return;
+  transitioning = true;
+  transitionDir = 1;
+  transitionAlpha = 0;
+  transitionTarget = target;
+}
+
+function updateTransition(dt) {
+  if (!transitioning) return;
+  transitionAlpha += transitionDir * 3 * dt;
+
+  if (transitionDir === 1 && transitionAlpha >= 1) {
+    transitionAlpha = 1;
+    // Switch screens
+    switch (transitionTarget) {
+      case 'level1': startLevel1(); break;
+      case 'level2': startLevel2(); break;
+      case 'level3': startLevel3(); break;
+      case 'win':    initWin(); break;
+    }
+    transitionDir = -1;
+  }
+
+  if (transitionDir === -1 && transitionAlpha <= 0) {
+    transitionAlpha = 0;
+    transitioning = false;
+  }
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+const keyMap = {};
+NOTES.forEach(n => { keyMap[n.key] = n.id; });
+
+document.addEventListener('keydown', e => {
+  const noteId = keyMap[e.key.toLowerCase()];
+  if (noteId !== undefined) {
+    handleNoteInput(noteId);
+  }
+});
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  if (gameState === 'menu') menuClick(mx, my);
+  if (gameState === 'win')  winClick(mx, my);
+});
+
+function handleNoteInput(noteId) {
+  if (gameState === 'level1') l1HandleNote(noteId);
+  if (gameState === 'level2') l2HandleNote(noteId);
+  if (gameState === 'level3') l3HandleNote(noteId);
+}
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+function updateMessage(dt) {
+  if (msgTimer > 0) {
+    msgTimer -= dt;
+    if (msgTimer <= 0) {
+      msgEl.style.display = 'none';
+    }
+  }
+}
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  updateMessage(dt);
+  updateTransition(dt);
+  updateParticles(dt);
+
+  switch (gameState) {
+    case 'menu':   drawMenu(dt); break;
+    case 'level1': updateLevel1(dt); drawLevel1(); break;
+    case 'level2': updateLevel2(dt); drawLevel2(); break;
+    case 'level3': updateLevel3(dt); drawLevel3(); break;
+    case 'win':    drawWin(dt); break;
+  }
+
+  drawParticles();
+
+  // Transition overlay
+  if (transitioning && transitionAlpha > 0) {
+    ctx.fillStyle = `rgba(0,0,0,${transitionAlpha})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initMenu();
+requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(gameLoop); });
+</script>
+</body>
+</html>
