@@ -367,6 +367,7 @@ function playError() {
 let gameState = 'menu';
 let score = 0;
 let lives = 3;
+let maxLives = 3;
 let stars = [];
 let particles = [];
 let octaveColor = 0; // 0 = gray, 1 = full color
@@ -930,7 +931,7 @@ function showHUD(levelName) {
 function hideHUD() { hudEl.style.display = 'none'; }
 function updateHUD() {
   hudScore.textContent = `⭐ ${score}`;
-  hudLives.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+  hudLives.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, maxLives - lives));
 }
 
 // ============================================================
@@ -1334,7 +1335,7 @@ let l2FlashTimer = 0;
 function startLevel2() {
   gameState = 'level2';
   l2Score = 0; particles = [];
-  lives = 3;
+  lives = 8; maxLives = 8;
   updateHUD();
   showHUD('Niveau 2 — Le Chant des Étoiles');
   pianoBar.style.display = 'flex';
@@ -1564,7 +1565,7 @@ let l3FinishTimer = 0;
 
 function startLevel3() {
   gameState = 'level3';
-  lives = 3;
+  lives = 10; maxLives = 10;
   l3Score = 0;
   l3NoteObjs = [];
   l3HitFeedbacks = [];
