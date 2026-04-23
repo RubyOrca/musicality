@@ -186,7 +186,7 @@
     /* Back to menu button */
     #btn-back {
       position: absolute;
-      top: 14px; right: 20px;
+      top: 14px; left: 20px;
       background: rgba(0,0,0,0.55);
       border: 2px solid rgba(255,255,255,0.25);
       color: rgba(255,255,255,0.85);
@@ -269,6 +269,7 @@ const NOTES = [
   { id: 4, name: 'SOL', key: 'g', color: '#4488FF', glow: '#4488FF80', freq: 392.00 },
   { id: 5, name: 'LA',  key: 'h', color: '#9944CC', glow: '#9944CC80', freq: 440.00 },
   { id: 6, name: 'SI',  key: 'j', color: '#FF69B4', glow: '#FF69B480', freq: 493.88 },
+  { id: 7, name: 'DO',  key: 'k', color: '#FF4444', glow: '#FF000080', freq: 523.25 },
 ];
 
 // "Au Clair de la Lune" (simplified)
@@ -430,109 +431,180 @@ function drawStars(dt) {
 }
 
 // ============================================================
-// DRAW OCTAVE THE CAT
+// ============================================================
+// DRAW ZOMBIE (humanoid, cute)
 // ============================================================
 function drawOctave(x, y, size, gray = false, hat = false) {
-  const col = gray ? '#888888' : '#FF9944';
-  const dark = gray ? '#555555' : '#CC6622';
-  const belly = gray ? '#AAAAAA' : '#FFCC88';
+  drawZombie(x, y, size, gray, hat);
+}
+function drawZombie(x, y, size, gray = false, hat = false) {
+  const skin  = gray ? '#8A9A88' : '#88CC66';
+  const dark  = gray ? '#4A5A48' : '#4A7A33';
+  const shirt = gray ? '#888888' : '#CC4444';
+  const pants = gray ? '#666666' : '#5544AA';
 
   ctx.save();
   ctx.translate(x, y);
 
   // Shadow
   ctx.beginPath();
-  ctx.ellipse(0, size * 0.7, size * 0.5, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, size * 0.82, size * 0.45, size * 0.1, 0, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fill();
 
-  // Body
-  ctx.beginPath();
-  ctx.ellipse(0, size * 0.1, size * 0.42, size * 0.52, 0, 0, Math.PI * 2);
-  ctx.fillStyle = col;
-  ctx.fill();
-
-  // Belly
-  ctx.beginPath();
-  ctx.ellipse(0, size * 0.18, size * 0.22, size * 0.3, 0, 0, Math.PI * 2);
-  ctx.fillStyle = belly;
-  ctx.fill();
-
-  // Tail
-  ctx.beginPath();
-  ctx.moveTo(size * 0.38, size * 0.35);
-  ctx.quadraticCurveTo(size * 0.9, size * 0.5, size * 0.7, size * -0.1);
-  ctx.strokeStyle = col;
-  ctx.lineWidth = size * 0.12;
+  // Legs
   ctx.lineCap = 'round';
-  ctx.stroke();
-
-  // Head
-  ctx.beginPath();
-  ctx.arc(0, -size * 0.42, size * 0.36, 0, Math.PI * 2);
-  ctx.fillStyle = col;
-  ctx.fill();
-
-  // Ears
-  [[-1, -0.72, -0.45, -1.05, -0.15, -0.78],
-   [ 1,  0.72,  0.45, -1.05,  0.15, -0.78]].forEach(([, x1, x2, y2, x3, y3]) => {
+  [[-0.15, 0.45, -0.18, 0.82], [0.15, 0.45, 0.18, 0.82]].forEach(([x1, y1, x2, y2]) => {
     ctx.beginPath();
-    ctx.moveTo(x1 * size * 0.28, -size * 0.65);
-    ctx.lineTo(x2 * size * 0.28, y2 * size);
-    ctx.lineTo(x3 * size * 0.28, y3 * size);
-    ctx.closePath();
-    ctx.fillStyle = col;
-    ctx.fill();
-    // Inner ear
+    ctx.moveTo(x1 * size, y1 * size);
+    ctx.lineTo(x2 * size, y2 * size);
+    ctx.strokeStyle = pants;
+    ctx.lineWidth = size * 0.18;
+    ctx.stroke();
+    // shoe
     ctx.beginPath();
-    ctx.moveTo(x1 * size * 0.18, -size * 0.62);
-    ctx.lineTo(x2 * size * 0.16, (y2 + 0.1) * size);
-    ctx.lineTo(x3 * size * 0.1, (y3 + 0.03) * size);
-    ctx.closePath();
-    ctx.fillStyle = gray ? '#AA7777' : '#FF7799';
+    ctx.ellipse(x2 * size, y2 * size + size * 0.04, size * 0.13, size * 0.07, 0, 0, Math.PI * 2);
+    ctx.fillStyle = gray ? '#444' : '#222244';
     ctx.fill();
   });
 
-  // Eyes
-  ctx.fillStyle = '#222';
-  [-0.14, 0.14].forEach(ex => {
+  // Body / shirt
+  ctx.beginPath();
+  ctx.roundRect(-size * 0.28, -size * 0.12, size * 0.56, size * 0.58, size * 0.12);
+  ctx.fillStyle = shirt;
+  ctx.fill();
+  // Torn shirt bottom
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.28, size * 0.38);
+  ctx.lineTo(-size * 0.20, size * 0.46);
+  ctx.lineTo(-size * 0.10, size * 0.40);
+  ctx.lineTo( 0,           size * 0.48);
+  ctx.lineTo( size * 0.10, size * 0.40);
+  ctx.lineTo( size * 0.20, size * 0.46);
+  ctx.lineTo( size * 0.28, size * 0.38);
+  ctx.fillStyle = shirt;
+  ctx.fill();
+  // Belly stitch scar
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = size * 0.022;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.10, size * 0.10);
+  ctx.lineTo( size * 0.10, size * 0.10);
+  ctx.stroke();
+  [-0.07, -0.01, 0.05].forEach(sx => {
     ctx.beginPath();
-    ctx.ellipse(ex * size, -size * 0.46, size * 0.075, size * 0.09, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Shine
-    ctx.fillStyle = 'white';
+    ctx.moveTo(sx * size, size * 0.06);
+    ctx.lineTo(sx * size, size * 0.14);
+    ctx.stroke();
+  });
+
+  // Left arm (outstretched zombie style)
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.28, size * 0.04);
+  ctx.lineTo(-size * 0.60, -size * 0.08);
+  ctx.strokeStyle = skin;
+  ctx.lineWidth = size * 0.15;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  // Left hand
+  ctx.beginPath();
+  ctx.arc(-size * 0.63, -size * 0.09, size * 0.1, 0, Math.PI * 2);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Right arm (dangling)
+  ctx.beginPath();
+  ctx.moveTo(size * 0.28, size * 0.04);
+  ctx.lineTo(size * 0.52, size * 0.22);
+  ctx.strokeStyle = skin;
+  ctx.lineWidth = size * 0.15;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(size * 0.55, size * 0.24, size * 0.1, 0, Math.PI * 2);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Neck
+  ctx.beginPath();
+  ctx.rect(-size * 0.1, -size * 0.18, size * 0.2, size * 0.1);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.44, size * 0.33, 0, Math.PI * 2);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Messy hair
+  ctx.fillStyle = gray ? '#555' : '#3A2200';
+  [[-0.25, -0.72, -0.12, -0.95, 0,     -0.72],
+   [-0.05, -0.75,  0.08, -1.0,  0.18,  -0.73],
+   [ 0.15, -0.70,  0.28, -0.92, 0.35,  -0.68]].forEach(([ax, ay, bx, by, cx2, cy]) => {
     ctx.beginPath();
-    ctx.arc(ex * size + size * 0.03, -size * 0.5, size * 0.025, 0, Math.PI * 2);
+    ctx.moveTo(ax * size, ay * size);
+    ctx.lineTo(bx * size, by * size);
+    ctx.lineTo(cx2 * size, cy * size);
+    ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#222';
+  });
+
+  // Forehead stitch
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = size * 0.022;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.10, -size * 0.62);
+  ctx.lineTo( size * 0.10, -size * 0.62);
+  ctx.stroke();
+  [-0.06, 0.02].forEach(sx => {
+    ctx.beginPath();
+    ctx.moveTo(sx * size, -size * 0.66);
+    ctx.lineTo(sx * size, -size * 0.58);
+    ctx.stroke();
+  });
+
+  // Eyes — X eyes
+  ctx.strokeStyle = '#1A1A1A';
+  ctx.lineWidth = size * 0.045;
+  ctx.lineCap = 'round';
+  [-0.13, 0.13].forEach(ex => {
+    const ex2 = ex * size, ey = -size * 0.47, r = size * 0.065;
+    ctx.beginPath(); ctx.moveTo(ex2 - r, ey - r); ctx.lineTo(ex2 + r, ey + r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ex2 + r, ey - r); ctx.lineTo(ex2 - r, ey + r); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath();
+    ctx.arc(ex2 + size * 0.04, ey - size * 0.05, size * 0.02, 0, Math.PI * 2);
+    ctx.fill();
   });
 
   // Nose
   ctx.beginPath();
-  ctx.arc(0, -size * 0.35, size * 0.045, 0, Math.PI * 2);
-  ctx.fillStyle = gray ? '#999' : '#FF5577';
+  ctx.arc(0, -size * 0.37, size * 0.038, 0, Math.PI * 2);
+  ctx.fillStyle = dark;
   ctx.fill();
 
-  // Mouth
-  ctx.beginPath();
-  ctx.arc(-size * 0.06, -size * 0.29, size * 0.07, 0.2, Math.PI - 0.2);
-  ctx.arc( size * 0.06, -size * 0.29, size * 0.07, 0.2, Math.PI - 0.2);
+  // Mouth — stitched zigzag
   ctx.strokeStyle = dark;
-  ctx.lineWidth = size * 0.025;
+  ctx.lineWidth = size * 0.028;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.14, -size * 0.28);
+  ctx.lineTo(-size * 0.07, -size * 0.24);
+  ctx.lineTo(0,             -size * 0.28);
+  ctx.lineTo( size * 0.07, -size * 0.24);
+  ctx.lineTo( size * 0.14, -size * 0.28);
   ctx.stroke();
-
-  // Whiskers
-  ctx.strokeStyle = gray ? 'rgba(120,120,120,0.7)' : 'rgba(200,150,80,0.8)';
-  ctx.lineWidth = size * 0.018;
-  [[-0.08, -0.33, -0.55, -0.38], [-0.08, -0.33, -0.55, -0.30], [-0.08, -0.33, -0.55, -0.23],
-   [ 0.08, -0.33,  0.55, -0.38], [ 0.08, -0.33,  0.55, -0.30], [ 0.08, -0.33,  0.55, -0.23]].forEach(([x1, y1, x2, y2]) => {
+  ctx.fillStyle = dark;
+  [-0.10, -0.03, 0.04, 0.11].forEach(sx => {
     ctx.beginPath();
-    ctx.moveTo(x1 * size, y1 * size);
-    ctx.lineTo(x2 * size, y2 * size);
-    ctx.stroke();
+    ctx.arc(sx * size, -size * 0.26, size * 0.015, 0, Math.PI * 2);
+    ctx.fill();
   });
 
-  // Wizard hat (win screen)
+  // Wizard hat
   if (hat) {
     ctx.beginPath();
     ctx.moveTo(-size * 0.38, -size * 0.72);
@@ -542,7 +614,6 @@ function drawOctave(x, y, size, gray = false, hat = false) {
     ctx.closePath();
     ctx.fillStyle = '#6644BB';
     ctx.fill();
-
     ctx.beginPath();
     ctx.moveTo(0, -size * 1.35);
     ctx.lineTo(-size * 0.32, -size * 0.78);
@@ -550,13 +621,216 @@ function drawOctave(x, y, size, gray = false, hat = false) {
     ctx.closePath();
     ctx.fillStyle = '#6644BB';
     ctx.fill();
-
-    // Stars on hat
     ['#FFD700','#FF69B4','#4488FF'].forEach((c, i) => {
+      drawStar5(ctx, (i - 1) * size * 0.18, -size * (0.9 + i * 0.12), size * 0.06, c);
+    });
+  }
+
+  ctx.restore();
+}
+
+// ============================================================
+// DRAW VAMPIRE (humanoid, cute)
+// ============================================================
+function drawVampire(x, y, size, gray = false, hat = false) {
+  const skin  = gray ? '#AAAAAA' : '#F0D8C8';
+  const dark  = gray ? '#555555' : '#8B1A1A';
+  const cape  = gray ? '#555555' : '#880022';
+  const capeI = gray ? '#888888' : '#CC1133';
+  const hair  = gray ? '#666666' : '#111111';
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Shadow
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.82, size * 0.45, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fill();
+
+  // Cape (back layer, wide)
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.05, -size * 0.12);
+  ctx.lineTo(-size * 0.58, size * 0.55);
+  ctx.lineTo(-size * 0.30, size * 0.80);
+  ctx.lineTo( size * 0.30, size * 0.80);
+  ctx.lineTo( size * 0.58, size * 0.55);
+  ctx.lineTo( size * 0.05, -size * 0.12);
+  ctx.fillStyle = cape;
+  ctx.fill();
+  // Cape inner lining
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.04, -size * 0.10);
+  ctx.lineTo(-size * 0.44, size * 0.52);
+  ctx.lineTo(-size * 0.22, size * 0.78);
+  ctx.lineTo( size * 0.22, size * 0.78);
+  ctx.lineTo( size * 0.44, size * 0.52);
+  ctx.lineTo( size * 0.04, -size * 0.10);
+  ctx.fillStyle = capeI;
+  ctx.fill();
+
+  // Legs
+  [[-0.13, 0.45, -0.15, 0.80], [0.13, 0.45, 0.15, 0.80]].forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1 * size, y1 * size);
+    ctx.lineTo(x2 * size, y2 * size);
+    ctx.strokeStyle = gray ? '#555' : '#111133';
+    ctx.lineWidth = size * 0.16;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x2 * size, y2 * size + size * 0.04, size * 0.12, size * 0.065, 0, 0, Math.PI * 2);
+    ctx.fillStyle = gray ? '#444' : '#000022';
+    ctx.fill();
+  });
+
+  // Body (white shirt under cape)
+  ctx.beginPath();
+  ctx.roundRect(-size * 0.20, -size * 0.12, size * 0.40, size * 0.58, size * 0.10);
+  ctx.fillStyle = gray ? '#AAAAAA' : '#F5F5FF';
+  ctx.fill();
+  // Bow-tie
+  ctx.fillStyle = gray ? '#777' : '#CC0022';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.09, -size * 0.14);
+  ctx.lineTo( 0,           -size * 0.09);
+  ctx.lineTo(-size * 0.09, -size * 0.04);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo( size * 0.09, -size * 0.14);
+  ctx.lineTo( 0,           -size * 0.09);
+  ctx.lineTo( size * 0.09, -size * 0.04);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.09, size * 0.04, 0, Math.PI * 2);
+  ctx.fillStyle = gray ? '#888' : '#FF0033';
+  ctx.fill();
+
+  // Neck
+  ctx.beginPath();
+  ctx.rect(-size * 0.09, -size * 0.18, size * 0.18, size * 0.09);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.44, size * 0.32, 0, Math.PI * 2);
+  ctx.fillStyle = skin;
+  ctx.fill();
+
+  // Pointy ears
+  [[-1, 1]].forEach(() => {
+    [-1, 1].forEach(side => {
       ctx.beginPath();
-      const hx = (i - 1) * size * 0.18;
-      const hy = -size * (0.9 + i * 0.12);
-      drawStar5(ctx, hx, hy, size * 0.06, c);
+      ctx.moveTo(side * size * 0.28, -size * 0.52);
+      ctx.lineTo(side * size * 0.40, -size * 0.72);
+      ctx.lineTo(side * size * 0.18, -size * 0.58);
+      ctx.closePath();
+      ctx.fillStyle = skin;
+      ctx.fill();
+    });
+  });
+
+  // Slicked hair
+  ctx.fillStyle = hair;
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.70, size * 0.33, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Hair widow's peak
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.16, -size * 0.70);
+  ctx.lineTo(0,             -size * 0.60);
+  ctx.lineTo( size * 0.16, -size * 0.70);
+  ctx.closePath();
+  ctx.fill();
+  // Hair sides
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.30, -size * 0.66);
+  ctx.quadraticCurveTo(-size * 0.38, -size * 0.50, -size * 0.32, -size * 0.44);
+  ctx.lineWidth = size * 0.10;
+  ctx.strokeStyle = hair;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo( size * 0.30, -size * 0.66);
+  ctx.quadraticCurveTo( size * 0.38, -size * 0.50,  size * 0.32, -size * 0.44);
+  ctx.stroke();
+
+  // Eyes — big cute eyes with red iris
+  [-0.12, 0.12].forEach(ex => {
+    const ex2 = ex * size, ey = -size * 0.47;
+    // White of eye
+    ctx.beginPath();
+    ctx.ellipse(ex2, ey, size * 0.08, size * 0.09, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    // Red iris
+    ctx.beginPath();
+    ctx.arc(ex2, ey + size * 0.01, size * 0.05, 0, Math.PI * 2);
+    ctx.fillStyle = gray ? '#888' : '#CC0000';
+    ctx.fill();
+    // Pupil
+    ctx.beginPath();
+    ctx.arc(ex2, ey + size * 0.01, size * 0.025, 0, Math.PI * 2);
+    ctx.fillStyle = '#111';
+    ctx.fill();
+    // Shine
+    ctx.beginPath();
+    ctx.arc(ex2 + size * 0.03, ey - size * 0.03, size * 0.02, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+  });
+
+  // Nose (small)
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.36, size * 0.033, 0, Math.PI * 2);
+  ctx.fillStyle = gray ? '#999' : '#D4A0A0';
+  ctx.fill();
+
+  // Smile with fangs
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = size * 0.025;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.22, size * 0.13, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+  // Fangs
+  ctx.fillStyle = 'white';
+  [[-0.06, 0.06]].forEach(() => {
+    [-0.06, 0.06].forEach(fx => {
+      ctx.beginPath();
+      ctx.moveTo(fx * size - size * 0.025, -size * 0.22);
+      ctx.lineTo(fx * size,                -size * 0.30);
+      ctx.lineTo(fx * size + size * 0.025, -size * 0.22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = gray ? '#888' : '#DDBBBB';
+      ctx.lineWidth = size * 0.012;
+      ctx.stroke();
+    });
+  });
+
+  // Wizard hat
+  if (hat) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.38, -size * 0.72);
+    ctx.lineTo( size * 0.38, -size * 0.72);
+    ctx.lineTo( size * 0.38, -size * 0.78);
+    ctx.lineTo(-size * 0.38, -size * 0.78);
+    ctx.closePath();
+    ctx.fillStyle = '#6644BB';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.35);
+    ctx.lineTo(-size * 0.32, -size * 0.78);
+    ctx.lineTo( size * 0.32, -size * 0.78);
+    ctx.closePath();
+    ctx.fillStyle = '#6644BB';
+    ctx.fill();
+    ['#FFD700','#FF69B4','#4488FF'].forEach((c, i) => {
+      drawStar5(ctx, (i - 1) * size * 0.18, -size * (0.9 + i * 0.12), size * 0.06, c);
     });
   }
 
@@ -764,18 +1038,20 @@ function drawMenu(dt) {
   ctx.font = `${Math.floor(W * 0.023)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(200,200,255,0.8)';
-  ctx.fillText('✨ Aide Octave à retrouver ses couleurs ! ✨', W / 2, H * 0.22);
+  ctx.fillText('✨ Aide Zom & Vlad à retrouver leurs couleurs ! ✨', W / 2, H * 0.22);
 
-  // Octave (gray, bouncing)
+  // Zom (zombie) + Vlad (vampire) bouncing side by side
   const bounce = Math.sin(menuTimer * 2) * 8;
-  drawOctave(W / 2, H * 0.42 + bounce, 62, true);
+  const bouncV = Math.sin(menuTimer * 2 + 1) * 8;
+  drawZombie (W / 2 - size * 0.42, H * 0.42 + bounce, 62, true);
+  drawVampire(W / 2 + size * 0.42, H * 0.42 + bouncV, 62, true);
 
   // Story
   ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#CCCCEE';
-  ctx.fillText('Octave le chat a perdu toutes ses couleurs…', W / 2, H * 0.59);
-  ctx.fillText('Choisis un niveau pour l\'aider !', W / 2, H * 0.64);
+  ctx.fillText('Zom le zombie et Vlad le vampire ont perdu leurs couleurs…', W / 2, H * 0.59);
+  ctx.fillText('Choisis un niveau pour les aider !', W / 2, H * 0.64);
 
   // High score niveau 1
   if (l1HighScore > 0) {
@@ -963,9 +1239,10 @@ function drawLevel1() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Octave watching from the side
+  // Zom & Vlad watching from the sides
   const octYL1 = H - 200;
-  drawOctave(60, octYL1, 50, octaveColor < 0.5);
+  drawZombie (60,     octYL1, 50, octaveColor < 0.5);
+  drawVampire(W - 60, octYL1, 50, octaveColor < 0.5);
 
   // Progress text
   ctx.font = 'bold 20px Comic Sans MS, cursive';
@@ -1095,7 +1372,7 @@ function startLevel2() {
   showInstruction(
     '⭐ Le Chant des Étoiles',
     'Le jeu va jouer un son de note.<br>Écoute bien, puis clique sur la plateforme<br>qui porte le <strong>bon nom de note</strong> !<br><br>' +
-    'Octave va sauter vers elle si tu as raison ! 🐱',
+    'Zom va sauter vers elle si tu as raison ! 🧟',
     '🎵 J\'écoute !',
     () => { l2WaitDelay = 1.0; }
   );
@@ -1221,9 +1498,9 @@ function drawLevel2() {
     ctx.restore();
   });
 
-  // Octave
+  // Zom jumping on platforms
   const bounceL2 = l2Moving ? Math.sin(Date.now() / 80) * 6 : 0;
-  drawOctave(l2OctX, l2OctY + bounceL2, 52, octaveColor < 0.8);
+  drawZombie(l2OctX, l2OctY + bounceL2, 52, octaveColor < 0.8);
 
   if (l2Score >= L2_TARGET) {
     transitionTo('menu');
@@ -1247,7 +1524,8 @@ function l2HandleNote(noteId) {
       p.litTimer = 0;
       spawnParticles(p.x, p.y, p.note.color, 14);
     }
-    playSuccess();
+    const successFreq = NOTES[noteId].freq;
+    setTimeout(() => playNote(successFreq, 1.2, 0.5), 1000);
     score += 15;
     l2Score++;
     updateHUD();
@@ -1507,9 +1785,10 @@ function drawLevel3() {
   ctx.fillStyle = 'rgba(200,200,255,0.6)';
   ctx.fillText('Appuie sur la bonne touche quand la note arrive à la ligne dorée !', W / 2, 90);
 
-  // Octave
+  // Zom & Vlad cheering on the sides
   const jumpAnim = Math.sin(l3ElapsedTime * 4) * 8;
-  drawOctave(W - 100, H * 0.62 + jumpAnim, 60, false);
+  drawZombie (W - 90, H * 0.62 + jumpAnim, 55, false);
+  drawVampire(90,     H * 0.62 - jumpAnim, 55, false);
 
   // Score big
   ctx.save();
@@ -1632,11 +1911,12 @@ function drawWin(dt) {
   ctx.font = `bold ${Math.floor(W * 0.03)}px Comic Sans MS, cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'white';
-  ctx.fillText('Octave a retrouvé toutes ses couleurs !', W / 2, H * 0.28);
+  ctx.fillText('Zom & Vlad ont retrouvé toutes leurs couleurs !', W / 2, H * 0.28);
 
-  // Octave with wizard hat, full color
+  // Both characters celebrating
   const bounceWin = Math.sin(winTimer * 2.5) * 12;
-  drawOctave(W / 2, H * 0.52 + bounceWin, 95, false, true);
+  drawZombie (W / 2 - 80, H * 0.52 + bounceWin,  80, false, true);
+  drawVampire(W / 2 + 80, H * 0.52 - bounceWin,  80, false, false);
 
   // Stars
   const numStars = Math.min(5, Math.floor(score / 40));
