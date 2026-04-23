@@ -1320,6 +1320,7 @@ function startLevel3() {
       hit: false,
       missed: false,
       soundPlayed: false,
+      currentX: startPx + LEAD_TIME * BEAT_SPEED, // position initiale correcte dès le 1er frame
     });
     timeAccum += m.beats * BEAT_DUR_L3;
   });
