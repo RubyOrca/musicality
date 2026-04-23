@@ -1043,8 +1043,8 @@ function drawMenu(dt) {
   // Zom (zombie) + Vlad (vampire) bouncing side by side
   const bounce = Math.sin(menuTimer * 2) * 8;
   const bouncV = Math.sin(menuTimer * 2 + 1) * 8;
-  drawZombie (W / 2 - size * 0.42, H * 0.42 + bounce, 62, true);
-  drawVampire(W / 2 + size * 0.42, H * 0.42 + bouncV, 62, true);
+  drawZombie (W / 2 - 80, H * 0.42 + bounce, 62, true);
+  drawVampire(W / 2 + 80, H * 0.42 + bouncV, 62, true);
 
   // Story
   ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
