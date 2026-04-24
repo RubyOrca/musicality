@@ -1526,8 +1526,7 @@ function l2HandleNote(noteId) {
       p.litTimer = 0;
       spawnParticles(p.x, p.y, p.note.color, 14);
     }
-    const successFreq = NOTES[noteId].freq;
-    setTimeout(() => playNote(successFreq, 1.2, 0.5), 1000);
+    setTimeout(() => playSuccess(), 1000);
     score += 15;
     l2Score++;
     updateHUD();
