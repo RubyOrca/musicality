@@ -1208,17 +1208,108 @@ function startLevel1() {
   );
 }
 
+// Portée musicale — layout calculé en fonction de W et H
+function computeStaffLayout() {
+  const topY    = 85;
+  const botY    = H - 175;
+  const staffMid = topY + (botY - topY) * 0.52;
+  const ls      = Math.max(18, Math.min(26, (botY - topY) * 0.062)); // espacement lignes
+  const ss      = ls / 2; // demi-pas (espace entre notes adjacentes)
+  const mL = 50, mR = 50;
+  const colW    = (W - mL - mR) / 7;
+  const colX    = Array.from({length: 7}, (_, i) => mL + (i + 0.5) * colW);
+
+  // 5 lignes de la portée (clé de Sol) :
+  // Ligne 1=Mi, 2=Sol, 3=Si, 4=Ré(5), 5=Fa(5)
+  // staffMid centré sur Si (ligne 3)
+  const staffLines = [
+    staffMid - 2 * ls,  // Fa(5) - ligne 5
+    staffMid - ls,      // Ré(5) - ligne 4
+    staffMid,           // Si    - ligne 3
+    staffMid + ls,      // Sol   - ligne 2
+    staffMid + 2 * ls,  // Mi    - ligne 1
+  ];
+
+  // Hauteur Y de chaque note sur la portée (Do→Si, indices 0→6)
+  const noteY = [
+    staffMid + 3    * ss,  // Do (C4) — interligne sous ligne 1
+    staffMid + 2.5  * ss,  // Ré (D4) — sous ligne 1
+    staffMid + 2    * ss,  // Mi (E4) — ligne 1
+    staffMid + 1.5  * ss,  // Fa (F4) — espace 1
+    staffMid + 1    * ss,  // Sol(G4) — ligne 2
+    staffMid + 0.5  * ss,  // La (A4) — espace 2
+    staffMid,              // Si (B4) — ligne 3
+  ];
+
+  return { staffMid, ls, ss, staffLines, colX, noteY, topY, botY };
+}
+
+function drawGhostStaff(lay) {
+  // Couloirs verticaux (très transparents)
+  NOTES.slice(0, 7).forEach((note, i) => {
+    ctx.fillStyle = note.color + '0F';
+    const hw = lay.colX[1] - lay.colX[0] < 100 ? 38 : 45;
+    ctx.fillRect(lay.colX[i] - hw, lay.topY, hw * 2, lay.botY - lay.topY);
+  });
+
+  // Lignes horizontales de la portée
+  ctx.strokeStyle = 'rgba(200,210,255,0.22)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  lay.staffLines.forEach(lineY => {
+    ctx.beginPath();
+    ctx.moveTo(18, lineY);
+    ctx.lineTo(W - 18, lineY);
+    ctx.stroke();
+  });
+
+  // Interligne/ligère pour Do (en dessous de la portée)
+  const doX = lay.colX[0];
+  ctx.strokeStyle = 'rgba(200,210,255,0.22)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(doX - 30, lay.noteY[0]);
+  ctx.lineTo(doX + 30, lay.noteY[0]);
+  ctx.stroke();
+
+  // Petits indicateurs de note en haut de chaque colonne
+  NOTES.slice(0, 7).forEach((note, i) => {
+    const cx = lay.colX[i];
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.arc(cx, lay.topY + 18, 15, 0, Math.PI * 2);
+    ctx.fillStyle = note.color;
+    ctx.fill();
+    ctx.font = 'bold 10px Comic Sans MS, cursive';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(note.name, cx, lay.topY + 18);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+
+    // Petite tête de note fantôme sur la portée
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    ctx.ellipse(cx, lay.noteY[i], 10, 7, -0.3, 0, Math.PI * 2);
+    ctx.fillStyle = note.color;
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
 function spawnBubble() {
   const note = NOTES[Math.floor(Math.random() * 7)];
-  const x = 80 + Math.random() * (W - 160);
+  const lay  = computeStaffLayout();
+  const x    = lay.colX[note.id];
   bubbles.push({
     note, x, y: -40,
-    r: 38,
-    speed: 90 + Math.random() * 50,
-    wobble: Math.random() * Math.PI * 2,
-    hit: false,
-    hitTimer: 0,
-    miss: false,
+    r: 32,
+    speed: 85 + Math.random() * 45,
+    wobble: Math.random() * Math.PI * 2, // animation visuelle seulement
+    hit: false, hitTimer: 0, miss: false,
   });
 }
 
@@ -1236,8 +1327,7 @@ function updateLevel1(dt) {
   bubbles.forEach(b => {
     if (!b.hit && !b.miss) {
       b.y += b.speed * dt;
-      b.wobble += dt * 1.5;
-      b.x += Math.sin(b.wobble) * 0.8;
+      b.wobble += dt * 2; // animation visuelle (pulsation) seulement
       if (b.y > pianoTop) {
         b.miss = true;
         lives--;
@@ -1277,6 +1367,9 @@ function drawLevel1() {
   ctx.fillRect(0, 0, W, H - 150);
 
   drawStars(0);
+
+  // Portée fantôme
+  drawGhostStaff(computeStaffLayout());
 
   // "Catch line" just above piano
   const lineY = H - 160;
