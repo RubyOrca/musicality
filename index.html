@@ -344,6 +344,46 @@ function playSuccess() {
   });
 }
 
+// Sustained piano notes (level 3)
+const sustainNodes = {};
+function startSustainNote(noteId) {
+  if (sustainNodes[noteId]) return;
+  const ac = getAudio();
+  const now = ac.currentTime;
+  const freq = NOTES[noteId].freq;
+  const masterGain = ac.createGain();
+  masterGain.connect(ac.destination);
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(0.4, now + 0.015);
+  const oscs = [];
+  [1, 2, 3].forEach((harmonic, i) => {
+    const osc = ac.createOscillator();
+    const g   = ac.createGain();
+    osc.type = i === 0 ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(freq * harmonic, now);
+    g.gain.setValueAtTime([1, 0.4, 0.15][i], now);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(now);
+    oscs.push(osc);
+  });
+  sustainNodes[noteId] = { masterGain, oscs };
+}
+function stopSustainNote(noteId) {
+  const s = sustainNodes[noteId];
+  if (!s) return;
+  const ac = getAudio();
+  const now = ac.currentTime;
+  s.masterGain.gain.cancelScheduledValues(now);
+  s.masterGain.gain.setValueAtTime(s.masterGain.gain.value, now);
+  s.masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+  s.oscs.forEach(osc => { try { osc.stop(now + 0.4); } catch(e) {} });
+  delete sustainNodes[noteId];
+}
+function stopAllSustainNotes() {
+  Object.keys(sustainNodes).forEach(id => stopSustainNote(Number(id)));
+}
+
 function playError() {
   const ac = getAudio();
   const now = ac.currentTime;
@@ -864,8 +904,18 @@ NOTES.forEach(note => {
   key.id = 'key-' + note.id;
   key.style.background = `linear-gradient(to bottom, ${note.color}CC, ${note.color})`;
   key.innerHTML = `<span class="key-note-name">${note.name}</span><span class="key-shortcut">[${note.key.toUpperCase()}]</span>`;
-  key.addEventListener('mousedown', () => handleNoteInput(note.id));
-  key.addEventListener('touchstart', (e) => { e.preventDefault(); handleNoteInput(note.id); });
+  key.addEventListener('mousedown', () => {
+    if (gameState === 'level3') startSustainNote(note.id);
+    handleNoteInput(note.id);
+  });
+  key.addEventListener('mouseup',    () => stopSustainNote(note.id));
+  key.addEventListener('mouseleave', () => stopSustainNote(note.id));
+  key.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (gameState === 'level3') startSustainNote(note.id);
+    handleNoteInput(note.id);
+  });
+  key.addEventListener('touchend', (e) => { e.preventDefault(); stopSustainNote(note.id); });
   pianoBar.appendChild(key);
 });
 
@@ -1566,6 +1616,7 @@ let l3HitFeedbacks = [];
 let l3FinishTimer = 0;
 
 function startLevel3() {
+  stopAllSustainNotes();
   gameState = 'level3';
   lives = 10; maxLives = 10;
   l3Score = 0;
@@ -1638,13 +1689,6 @@ function updateLevel3(dt) {
     }
   });
 
-  // Son hint discret quand la note arrive sur la ligne de frappe
-  l3NoteObjs.forEach(n => {
-    if (!n.soundPlayed && !n.missed && n.currentX <= HIT_ZONE_X + 20 && n.currentX >= HIT_ZONE_X - 20) {
-      n.soundPlayed = true;
-      playNote(n.note.freq, n.beats * BEAT_DUR_L3, 0.12);
-    }
-  });
 
   // Progress bar (basée sur le temps écoulé hors délai)
   const progress = Math.min(1, (l3ElapsedTime + LEAD_TIME) / l3TotalTime);
@@ -1827,15 +1871,11 @@ function l3HandleNote(noteId) {
     // Hit!
     bestNote.hit = true;
     bestNote.hitTime = l3ElapsedTime;
-    playNote(note.freq, bestNote.beats * 0.5, 0.5);
     spawnParticles(HIT_ZONE_X, H * 0.38 + 40, note.color, 12);
     l3HitFeedbacks.push({ x: HIT_ZONE_X, y: H * 0.30, color: note.color, life: 1 });
     score += 20;
     l3Score++;
     updateHUD();
-  } else {
-    // Just play the note
-    playNote(note.freq, 0.6, 0.4);
   }
 }
 
@@ -2021,9 +2061,18 @@ const keyMap = {};
 NOTES.forEach(n => { keyMap[n.key] = n.id; });
 
 document.addEventListener('keydown', e => {
+  if (e.repeat) return;
   const noteId = keyMap[e.key.toLowerCase()];
   if (noteId !== undefined) {
+    if (gameState === 'level3') startSustainNote(noteId);
     handleNoteInput(noteId);
+  }
+});
+
+document.addEventListener('keyup', e => {
+  const noteId = keyMap[e.key.toLowerCase()];
+  if (noteId !== undefined && gameState === 'level3') {
+    stopSustainNote(noteId);
   }
 });
 
