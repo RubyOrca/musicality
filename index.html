@@ -1408,10 +1408,11 @@ function updateLevel2(dt) {
     l2WaitDelay -= dt;
     if (l2WaitDelay <= 0) {
       l2WaitDelay = 2.5;
-      // Pick random note
+      // Pick random note — play DO as reference first, then the note
       l2Expected = Math.floor(Math.random() * 7);
       const n = NOTES[l2Expected];
-      playNote(n.freq, 1.0);
+      playNote(NOTES[0].freq, 0.6, 0.3);
+      setTimeout(() => playNote(n.freq, 1.0), 700);
       l2ShowingNote = true;
       l2NoteTimer = 0;
     }
@@ -1545,9 +1546,12 @@ function l2HandleNote(noteId) {
       setTimeout(() => initMenu(), 1500);
       showMessage('😿 Aïe ! Retour au début…', 2);
     } else {
-      // Replay the note
+      // Replay DO reference then the note
       setTimeout(() => {
-        if (l2Expected >= 0) playNote(NOTES[l2Expected].freq, 1.0);
+        if (l2Expected >= 0) {
+          playNote(NOTES[0].freq, 0.6, 0.3);
+          setTimeout(() => playNote(NOTES[l2Expected].freq, 1.0), 700);
+        }
       }, 600);
     }
   }
