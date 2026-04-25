@@ -905,14 +905,14 @@ NOTES.forEach(note => {
   key.style.background = `linear-gradient(to bottom, ${note.color}CC, ${note.color})`;
   key.innerHTML = `<span class="key-note-name">${note.name}</span><span class="key-shortcut">[${note.key.toUpperCase()}]</span>`;
   key.addEventListener('mousedown', () => {
-    if (gameState === 'level3') startSustainNote(note.id);
+    startSustainNote(note.id);
     handleNoteInput(note.id);
   });
   key.addEventListener('mouseup',    () => stopSustainNote(note.id));
   key.addEventListener('mouseleave', () => stopSustainNote(note.id));
   key.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    if (gameState === 'level3') startSustainNote(note.id);
+    startSustainNote(note.id);
     handleNoteInput(note.id);
   });
   key.addEventListener('touchend', (e) => { e.preventDefault(); stopSustainNote(note.id); });
@@ -1032,9 +1032,10 @@ function initMenu() {
 }
 
 const MENU_BUTTONS = [
-  { label: '🫧 La Chasse aux Touches', sub: 'Attrape les bulles !', color1: '#4488FF', color2: '#44CCFF', action: () => startLevel1() },
-  { label: '⭐ Le Chant des Étoiles',  sub: 'Écoute et saute !',    color1: '#9944CC', color2: '#FF69B4', action: () => startLevel2() },
-  { label: '🎹 Le Grand Concert',      sub: 'Joue la mélodie !',    color1: '#FF6644', color2: '#FFD700', action: () => startLevel3() },
+  { label: '🫧 La Chasse aux Touches', sub: 'Attrape les bulles !',  color1: '#4488FF', color2: '#44CCFF', action: () => startLevel1() },
+  { label: '⭐ Le Chant des Étoiles',  sub: 'Écoute et saute !',     color1: '#9944CC', color2: '#FF69B4', action: () => startLevel2() },
+  { label: '🎹 Le Grand Concert',      sub: 'Joue la mélodie !',     color1: '#FF6644', color2: '#FFD700', action: () => startLevel3() },
+  { label: '🎵 Piano Libre',           sub: 'Joue comme tu veux !',  color1: '#22AA66', color2: '#88FFCC', action: () => startLevel4() },
 ];
 
 function drawMenu(dt) {
@@ -1447,15 +1448,11 @@ function l1HandleNote(noteId) {
     b.hit = true;
     b.hitTimer = 0;
     spawnParticles(b.x, b.y, b.note.color, 16);
-    playNote(b.note.freq, 0.8);
     score += 10;
     l1Score++;
     updateHUD();
     flashKey(noteId);
   } else {
-    // Wrong note or no bubble - just play the note
-    const note = NOTES[noteId];
-    playNote(note.freq, 0.6);
     flashKey(noteId);
   }
 }
@@ -1656,7 +1653,6 @@ function l2HandleNote(noteId) {
   if (instrEl.style.display === 'block') return;
 
   flashKey(noteId);
-  playNote(NOTES[noteId].freq, 0.8);
 
   if (noteId === l2Expected) {
     // Correct!
@@ -2136,6 +2132,7 @@ function updateTransition(dt) {
       case 'level1': startLevel1(); break;
       case 'level2': startLevel2(); break;
       case 'level3': startLevel3(); break;
+      case 'level4': startLevel4(); break;
       case 'win':    initWin();     break;
     }
     transitionDir = -1;
@@ -2157,14 +2154,14 @@ document.addEventListener('keydown', e => {
   if (e.repeat) return;
   const noteId = keyMap[e.key.toLowerCase()];
   if (noteId !== undefined) {
-    if (gameState === 'level3') startSustainNote(noteId);
+    startSustainNote(noteId);
     handleNoteInput(noteId);
   }
 });
 
 document.addEventListener('keyup', e => {
   const noteId = keyMap[e.key.toLowerCase()];
-  if (noteId !== undefined && gameState === 'level3') {
+  if (noteId !== undefined) {
     stopSustainNote(noteId);
   }
 });
@@ -2181,6 +2178,82 @@ function handleNoteInput(noteId) {
   if (gameState === 'level1') l1HandleNote(noteId);
   if (gameState === 'level2') l2HandleNote(noteId);
   if (gameState === 'level3') l3HandleNote(noteId);
+  if (gameState === 'level4') l4HandleNote(noteId);
+}
+
+// ============================================================
+// LEVEL 4: PIANO LIBRE
+// ============================================================
+let l4LastNote   = null;
+let l4NoteTimer  = 0;
+let l4MenuTimer  = 0;
+
+function startLevel4() {
+  stopAllSustainNotes();
+  gameState = 'level4';
+  l4LastNote  = null;
+  l4NoteTimer = 0;
+  l4MenuTimer = 0;
+  pianoBar.style.display = 'flex';
+  btnBack.style.display  = 'block';
+  hudEl.style.display    = 'none';
+  document.getElementById('progress-bar-container').style.display = 'none';
+}
+
+function l4HandleNote(noteId) {
+  l4LastNote  = NOTES[noteId];
+  l4NoteTimer = 2.5;
+  flashKey(noteId);
+}
+
+function updateLevel4(dt) {
+  l4MenuTimer += dt;
+  if (l4NoteTimer > 0) l4NoteTimer -= dt;
+}
+
+function drawLevel4() {
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0a0a2e');
+  grad.addColorStop(1, '#0d1a3a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  drawStars(0);
+
+  // Title
+  ctx.save();
+  ctx.font = `bold ${Math.floor(W * 0.038)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#88FFCC';
+  ctx.shadowColor = '#44FFAA';
+  ctx.shadowBlur = 18;
+  ctx.fillText('🎵 Piano Libre 🎵', W / 2, H * 0.18);
+  ctx.restore();
+
+  ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(200,255,230,0.6)';
+  ctx.fillText('Appuie sur les touches et explore les sons !', W / 2, H * 0.26);
+
+  // Zom & Vlad animés
+  const bounce1 = Math.sin(l4MenuTimer * 1.8) * 10;
+  const bounce2 = Math.sin(l4MenuTimer * 2.1 + 1) * 10;
+  drawZombie (W / 2 - 100, H * 0.50 + bounce1, 70, false);
+  drawVampire(W / 2 + 100, H * 0.50 + bounce2, 70, false);
+
+  // Affiche la dernière note jouée
+  if (l4LastNote && l4NoteTimer > 0) {
+    const alpha = Math.min(1, l4NoteTimer);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${Math.floor(W * 0.12)}px Comic Sans MS, cursive`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = l4LastNote.color;
+    ctx.shadowColor = l4LastNote.color;
+    ctx.shadowBlur = 40;
+    ctx.fillText(l4LastNote.name, W / 2, H * 0.46);
+    ctx.restore();
+  }
 }
 
 // ============================================================
@@ -2208,6 +2281,7 @@ function gameLoop(timestamp) {
     case 'level1': updateLevel1(dt); drawLevel1(); break;
     case 'level2': updateLevel2(dt); drawLevel2(); break;
     case 'level3': updateLevel3(dt); drawLevel3(); break;
+    case 'level4': updateLevel4(dt); drawLevel4(); break;
     case 'win':    drawWin(dt); break;
   }
 
