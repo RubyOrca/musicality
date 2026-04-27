@@ -5,16 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎹 L'Odyssée des Notes Magiques</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎹</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-deep:    #07091f;
+      --bg-mid:     #11154a;
+      --accent:     #FFD166;
+      --accent-2:   #EF476F;
+      --text:       #FFFFFF;
+      --text-soft:  rgba(220,228,255,0.78);
+      --text-mute:  rgba(180,190,230,0.55);
+      --surface:    rgba(18,22,55,0.78);
+      --border:     rgba(255,255,255,0.10);
+      --shadow-sm:  0 2px 8px rgba(0,0,0,0.30);
+      --shadow-md:  0 10px 28px rgba(0,0,0,0.40);
+      --shadow-lg:  0 24px 60px rgba(0,0,0,0.55);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0a0a2e;
+      background: var(--bg-deep);
       overflow: hidden;
       width: 100vw;
       height: 100vh;
-      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Bradley Hand', cursive;
+      font-family: 'Fredoka', 'Quicksand', system-ui, -apple-system, sans-serif;
+      font-weight: 500;
       user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: 0.2px;
     }
 
     #gameCanvas {
@@ -30,76 +52,107 @@
       display: none;
       justify-content: center;
       align-items: flex-end;
-      padding: 8px 8px 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.3));
-      gap: 6px;
+      padding: 12px 12px 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0) 100%);
+      gap: 7px;
       z-index: 10;
     }
 
     .piano-key {
-      width: 80px;
-      height: 130px;
+      width: 78px;
+      height: 132px;
       border-radius: 0 0 14px 14px;
-      border: 3px solid rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-top: none;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 12px;
-      font-weight: bold;
+      padding-bottom: 14px;
+      font-weight: 600;
       color: white;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-      transition: transform 0.08s, filter 0.08s, box-shadow 0.08s;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+      transition: transform 0.12s ease-out, filter 0.12s, box-shadow 0.15s;
       position: relative;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.2);
+      box-shadow:
+        0 6px 0 rgba(0,0,0,0.25),
+        0 10px 22px rgba(0,0,0,0.35),
+        inset 0 2px 0 rgba(255,255,255,0.28),
+        inset 0 -10px 16px rgba(0,0,0,0.18);
     }
 
-    .piano-key:hover { filter: brightness(1.2); }
+    .piano-key:hover {
+      filter: brightness(1.12);
+      transform: translateY(-2px);
+    }
     .piano-key.pressed, .piano-key:active {
-      transform: scaleY(0.93) translateY(4px);
-      filter: brightness(1.5);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.3);
+      transform: translateY(5px) scaleY(0.97);
+      filter: brightness(1.35);
+      box-shadow:
+        0 1px 0 rgba(0,0,0,0.20),
+        0 3px 8px rgba(0,0,0,0.30),
+        inset 0 2px 0 rgba(255,255,255,0.40),
+        inset 0 -4px 10px rgba(0,0,0,0.10);
     }
 
-    .key-note-name { font-size: 22px; line-height: 1; }
+    .key-note-name {
+      font-size: 21px;
+      line-height: 1;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
     .key-shortcut {
-      font-size: 13px;
-      opacity: 0.6;
-      margin-top: 4px;
-      background: rgba(0,0,0,0.3);
-      padding: 2px 6px;
-      border-radius: 4px;
+      font-size: 11px;
+      opacity: 0.65;
+      margin-top: 6px;
+      background: rgba(0,0,0,0.32);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
 
     /* HUD overlay */
     #hud {
       position: absolute;
-      top: 0; left: 0; right: 0;
+      top: 14px; left: 0; right: 0;
       display: none;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 24px;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+      padding: 0 22px;
       z-index: 10;
       pointer-events: none;
+      gap: 14px;
+    }
+
+    #hud-score, #hud-level, #hud-lives {
+      background: rgba(15,18,45,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 999px;
+      padding: 8px 18px;
+      box-shadow: var(--shadow-sm);
     }
 
     #hud-score {
-      font-size: 28px;
-      color: #FFD700;
-      text-shadow: 0 0 10px rgba(255,215,0,0.8);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 14px rgba(255,209,102,0.45);
     }
 
     #hud-level {
-      font-size: 20px;
+      font-size: 16px;
+      font-weight: 600;
       color: white;
-      text-shadow: 0 0 8px rgba(255,255,255,0.6);
+      letter-spacing: 0.3px;
     }
 
     #hud-lives {
-      font-size: 28px;
-      letter-spacing: 4px;
+      font-size: 22px;
+      letter-spacing: 3px;
     }
 
     /* Message overlay */
@@ -107,22 +160,25 @@
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.85);
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 20px;
-      padding: 30px 50px;
+      background: rgba(15,18,45,0.85);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 22px;
+      padding: 26px 50px;
       text-align: center;
       color: white;
-      font-size: 32px;
+      font-size: 26px;
+      font-weight: 600;
       display: none;
       z-index: 20;
-      animation: popIn 0.3s ease-out;
-      backdrop-filter: blur(8px);
+      animation: popIn 0.3s cubic-bezier(.34,1.56,.64,1);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-lg);
     }
 
     @keyframes popIn {
-      from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-      to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+      to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
     }
 
     /* Particle effect */
@@ -138,91 +194,110 @@
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, #1a1a4e, #2a2a6e);
-      border: 3px solid rgba(255,215,0,0.5);
-      border-radius: 24px;
-      padding: 40px 60px;
+      background:
+        linear-gradient(135deg, rgba(28,32,76,0.95) 0%, rgba(40,28,90,0.95) 100%);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 26px;
+      padding: 42px 56px;
       text-align: center;
       color: white;
       max-width: 600px;
       width: 90%;
       display: none;
       z-index: 30;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
 
     #instruction h2 {
-      font-size: 36px;
-      color: #FFD700;
-      margin-bottom: 16px;
-      text-shadow: 0 0 20px rgba(255,215,0,0.5);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 18px;
+      letter-spacing: 0.3px;
+      text-shadow: 0 0 24px rgba(255,209,102,0.40);
     }
 
     #instruction p {
-      font-size: 20px;
+      font-size: 18px;
       line-height: 1.6;
-      color: #ddd;
-      margin-bottom: 24px;
+      color: var(--text-soft);
+      margin-bottom: 28px;
+      font-weight: 400;
     }
 
     #instruction .start-btn {
-      background: linear-gradient(135deg, #FFD700, #FF8C00);
-      color: #0a0a2e;
+      background: linear-gradient(135deg, #FFD166 0%, #EF476F 100%);
+      color: #1a0a2e;
       border: none;
-      padding: 14px 40px;
-      font-size: 22px;
+      padding: 14px 38px;
+      font-size: 19px;
       font-family: inherit;
-      font-weight: bold;
-      border-radius: 50px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      border-radius: 999px;
       cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.1s;
-      box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+      transition: transform 0.15s ease-out, box-shadow 0.15s, filter 0.15s;
+      box-shadow: 0 6px 22px rgba(255,209,102,0.35), 0 2px 6px rgba(0,0,0,0.3);
     }
 
     #instruction .start-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 30px rgba(255,215,0,0.6);
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+      box-shadow: 0 10px 30px rgba(255,209,102,0.50), 0 4px 10px rgba(0,0,0,0.35);
     }
+    #instruction .start-btn:active { transform: translateY(0); }
 
     /* Back to menu button */
     #btn-back {
       position: absolute;
-      top: 52px; left: 20px;
-      background: rgba(0,0,0,0.55);
-      border: 2px solid rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.85);
-      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
-      font-size: 15px;
-      padding: 7px 18px;
-      border-radius: 20px;
+      top: 56px; left: 22px;
+      background: rgba(15,18,45,0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.88);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      padding: 8px 18px;
+      border-radius: 999px;
       cursor: pointer;
       display: none;
       z-index: 25;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.18s, border-color 0.18s, transform 0.18s;
+      box-shadow: var(--shadow-sm);
     }
     #btn-back:hover {
-      background: rgba(255,255,255,0.18);
-      border-color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.30);
+      transform: translateY(-1px);
     }
+    #btn-back:active { transform: translateY(0); }
 
     /* Progress bar for level 3 */
     #progress-bar-container {
       position: absolute;
-      bottom: 155px; left: 5%; right: 5%;
-      height: 12px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 6px;
+      bottom: 158px; left: 5%; right: 5%;
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 999px;
       display: none;
       z-index: 10;
       overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
     }
 
     #progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #FFD700, #FF8C00);
-      border-radius: 6px;
-      transition: width 0.3s;
+      background: linear-gradient(90deg, #FFD166 0%, #EF476F 100%);
+      border-radius: 999px;
+      transition: width 0.4s ease-out;
       width: 0%;
+      box-shadow: 0 0 12px rgba(255,209,102,0.6);
     }
   </style>
 </head>
@@ -1039,10 +1114,19 @@ const MENU_BUTTONS = [
 ];
 
 function drawMenu(dt) {
+  // Deep cosmic gradient background
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#0a0a2e');
-  grad.addColorStop(1, '#1a0a3e');
+  grad.addColorStop(0,    '#07091f');
+  grad.addColorStop(0.5,  '#0d1240');
+  grad.addColorStop(1,    '#1a0e3a');
   ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Soft radial nebula
+  const neb = ctx.createRadialGradient(W/2, H*0.45, 50, W/2, H*0.45, W*0.6);
+  neb.addColorStop(0, 'rgba(120,80,200,0.15)');
+  neb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = neb;
   ctx.fillRect(0, 0, W, H);
 
   drawStars(dt);
@@ -1067,7 +1151,7 @@ function drawMenu(dt) {
     s.alpha -= 0.3 * dt;
     ctx.save();
     ctx.globalAlpha = s.alpha;
-    ctx.font = `bold ${s.size}px Comic Sans MS, cursive`;
+    ctx.font = `bold ${s.size}px Fredoka, "Comic Sans MS", cursive`;
     ctx.fillStyle = s.note.color;
     ctx.shadowColor = s.note.color;
     ctx.shadowBlur = 12;
@@ -1075,109 +1159,148 @@ function drawMenu(dt) {
     ctx.restore();
   });
 
-  // Title
+  // Title (with elegant glow)
   ctx.save();
-  ctx.shadowColor = '#FFD700';
-  ctx.shadowBlur = 30;
-  ctx.font = `bold ${Math.floor(W * 0.055)}px Comic Sans MS, cursive`;
+  ctx.shadowColor = 'rgba(255,209,102,0.55)';
+  ctx.shadowBlur = 36;
+  ctx.font = `700 ${Math.floor(W * 0.052)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#FFD700';
+  const titleGrad = ctx.createLinearGradient(0, H*0.12, 0, H*0.20);
+  titleGrad.addColorStop(0, '#FFE9A8');
+  titleGrad.addColorStop(1, '#FFB347');
+  ctx.fillStyle = titleGrad;
   ctx.fillText("L'Odyssée des Notes Magiques", W / 2, H * 0.16);
   ctx.restore();
 
   // Subtitle
-  ctx.font = `${Math.floor(W * 0.023)}px Comic Sans MS, cursive`;
+  ctx.font = `500 ${Math.floor(W * 0.020)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(200,200,255,0.8)';
-  ctx.fillText('✨ Aide Zom & Vlad à retrouver leurs couleurs ! ✨', W / 2, H * 0.22);
+  ctx.fillStyle = 'rgba(220,228,255,0.78)';
+  ctx.fillText('Aide Zom & Vlad à retrouver leurs couleurs', W / 2, H * 0.225);
 
   // Zom (zombie) + Vlad (vampire) bouncing side by side
   const bounce = Math.sin(menuTimer * 2) * 8;
   const bouncV = Math.sin(menuTimer * 2 + 1) * 8;
-  drawZombie (W / 2 - 80, H * 0.42 + bounce, 62, true);
-  drawVampire(W / 2 + 80, H * 0.42 + bouncV, 62, true);
+  drawZombie (W / 2 - 80, H * 0.44 + bounce, 64, true);
+  drawVampire(W / 2 + 80, H * 0.44 + bouncV, 64, true);
 
-  // Story
-  ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
+  // Story (refined)
+  ctx.font = `400 ${Math.floor(W * 0.0165)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#CCCCEE';
-  ctx.fillText('Zom le zombie et Vlad le vampire ont perdu leurs couleurs…', W / 2, H * 0.59);
-  ctx.fillText('Choisis un niveau pour les aider !', W / 2, H * 0.64);
+  ctx.fillStyle = 'rgba(180,190,230,0.65)';
+  ctx.fillText('Zom le zombie et Vlad le vampire ont perdu leurs couleurs…', W / 2, H * 0.62);
+  ctx.fillStyle = 'rgba(220,228,255,0.85)';
+  ctx.font = `500 ${Math.floor(W * 0.019)}px Fredoka, "Comic Sans MS", cursive`;
+  ctx.fillText('Choisis un niveau pour commencer', W / 2, H * 0.665);
 
-  // High score niveau 1
+  // High score badge (niveau 1)
   if (l1HighScore > 0) {
     ctx.save();
-    ctx.font = `bold ${Math.floor(W * 0.019)}px Comic Sans MS, cursive`;
+    ctx.font = `600 ${Math.floor(W * 0.016)}px Fredoka, "Comic Sans MS", cursive`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#FFD700';
-    ctx.shadowColor = '#FFD700';
-    ctx.shadowBlur = 10;
-    ctx.fillText(`🏆 Record Chasse aux Touches : ${l1HighScore} bulles`, W / 2, H * 0.70);
+    const text = `Record : ${l1HighScore} bulles`;
+    const tw = ctx.measureText(text).width;
+    const padX = 16, padY = 7;
+    const bx = W / 2 - tw/2 - padX - 14;
+    const by = H * 0.71 - 14;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, tw + 2*padX + 24, 28, 999);
+    ctx.fillStyle = 'rgba(255,209,102,0.14)';
+    ctx.strokeStyle = 'rgba(255,209,102,0.35)';
+    ctx.lineWidth = 1;
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FFD166';
+    ctx.fillText('🏆 ' + text, W / 2, H * 0.71 + 4);
     ctx.restore();
   }
 
-  // 3 level buttons
-  const btnW = Math.min(240, W * 0.27);
-  const btnH = 80;
-  const gap = Math.min(28, W * 0.03);
-  const totalW = 3 * btnW + 2 * gap;
+  // Level buttons (works for any number of buttons)
+  const n = MENU_BUTTONS.length;
+  const gap = Math.min(20, W * 0.018);
+  const btnW = Math.min(220, (W * 0.92 - gap * (n - 1)) / n);
+  const btnH = 84;
+  const totalW = n * btnW + (n - 1) * gap;
   const startX = W / 2 - totalW / 2;
-  const btnY = H * 0.76;
+  const btnY = H * 0.78;
 
   MENU_BUTTONS.forEach((btn, i) => {
     const bx = startX + i * (btnW + gap);
     const cx = bx + btnW / 2;
     const cy = btnY + btnH / 2;
-    const pulse = 1 + Math.sin(menuTimer * 2.5 + i * 1.1) * 0.04;
+    const pulse = 1 + Math.sin(menuTimer * 2.2 + i * 1.1) * 0.025;
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(pulse, pulse);
 
-    // Shadow
+    // Soft drop shadow
     ctx.beginPath();
-    ctx.roundRect(-btnW/2 + 4, -btnH/2 + 6, btnW, btnH, 16);
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.roundRect(-btnW/2, -btnH/2 + 8, btnW, btnH, 20);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.filter = 'blur(8px)';
     ctx.fill();
+    ctx.filter = 'none';
 
-    // Button body
+    // Button body — diagonal gradient
     const bg = ctx.createLinearGradient(-btnW/2, -btnH/2, btnW/2, btnH/2);
     bg.addColorStop(0, btn.color1);
     bg.addColorStop(1, btn.color2);
     ctx.beginPath();
-    ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 16);
+    ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 20);
     ctx.fillStyle = bg;
     ctx.shadowColor = btn.color1;
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 4;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
     ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Inner top highlight
+    const hl = ctx.createLinearGradient(0, -btnH/2, 0, -btnH/2 + 24);
+    hl.addColorStop(0, 'rgba(255,255,255,0.32)');
+    hl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.roundRect(-btnW/2, -btnH/2, btnW, 24, [20, 20, 0, 0]);
+    ctx.fillStyle = hl;
+    ctx.fill();
+
+    // Subtle border
+    ctx.beginPath();
+    ctx.roundRect(-btnW/2, -btnH/2, btnW, btnH, 20);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     // Main label
-    ctx.font = `bold ${Math.floor(btnW * 0.115)}px Comic Sans MS, cursive`;
+    ctx.font = `700 ${Math.floor(btnW * 0.10)}px Fredoka, "Comic Sans MS", cursive`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
     ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 1;
     ctx.fillText(btn.label, 0, -10);
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 
     // Sub label
-    ctx.font = `${Math.floor(btnW * 0.088)}px Comic Sans MS, cursive`;
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillText(btn.sub, 0, 20);
+    ctx.font = `500 ${Math.floor(btnW * 0.072)}px Fredoka, "Comic Sans MS", cursive`;
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.fillText(btn.sub, 0, 18);
     ctx.textBaseline = 'alphabetic';
     ctx.restore();
   });
 }
 
 function menuClick(mx, my) {
-  const btnW = Math.min(240, W * 0.27);
-  const btnH = 80;
-  const gap = Math.min(28, W * 0.03);
-  const totalW = 3 * btnW + 2 * gap;
+  const n = MENU_BUTTONS.length;
+  const gap = Math.min(20, W * 0.018);
+  const btnW = Math.min(220, (W * 0.92 - gap * (n - 1)) / n);
+  const btnH = 84;
+  const totalW = n * btnW + (n - 1) * gap;
   const startX = W / 2 - totalW / 2;
-  const btnY = H * 0.76;
+  const btnY = H * 0.78;
 
   MENU_BUTTONS.forEach((btn, i) => {
     const bx = startX + i * (btnW + gap);
@@ -1282,7 +1405,7 @@ function drawGhostStaff(lay) {
     ctx.arc(cx, lay.topY + 18, 15, 0, Math.PI * 2);
     ctx.fillStyle = note.color;
     ctx.fill();
-    ctx.font = 'bold 10px Comic Sans MS, cursive';
+    ctx.font = 'bold 10px Fredoka, "Comic Sans MS", cursive';
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1389,7 +1512,7 @@ function drawLevel1() {
   drawVampire(W - 60, octYL1, 50, octaveColor < 0.5);
 
   // Progress text
-  ctx.font = 'bold 20px Comic Sans MS, cursive';
+  ctx.font = 'bold 20px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(255,255,200,0.7)';
   ctx.fillText(`🫧 ${l1Score} bulles`, 20, H - 165);
@@ -1430,7 +1553,7 @@ function drawLevel1() {
     ctx.fill();
 
     // Note name
-    ctx.font = `bold ${b.r * 0.7}px Comic Sans MS, cursive`;
+    ctx.font = `bold ${b.r * 0.7}px Fredoka, "Comic Sans MS", cursive`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
     ctx.textBaseline = 'middle';
@@ -1581,7 +1704,7 @@ function drawLevel2() {
   if (l2ShowingNote && l2Expected >= 0) {
     const n = NOTES[l2Expected];
     ctx.save();
-    ctx.font = 'bold 32px Comic Sans MS, cursive';
+    ctx.font = 'bold 32px Fredoka, "Comic Sans MS", cursive';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
     ctx.shadowColor = 'rgba(255,255,255,0.6)';
@@ -1589,14 +1712,14 @@ function drawLevel2() {
     ctx.fillText(`🎵 Quelle note entends-tu ? — ${n.name}`, W / 2, 90);
     ctx.restore();
   } else {
-    ctx.font = 'bold 26px Comic Sans MS, cursive';
+    ctx.font = 'bold 26px Fredoka, "Comic Sans MS", cursive';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(200,200,255,0.5)';
     ctx.fillText('🎵 Écoute la note, puis clique sur la bonne plateforme !', W / 2, 90);
   }
 
   // Progress
-  ctx.font = 'bold 20px Comic Sans MS, cursive';
+  ctx.font = 'bold 20px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,200,0.7)';
   ctx.fillText(`⭐ ${l2Score} / ${L2_TARGET}`, W / 2, H - 170);
@@ -1629,7 +1752,7 @@ function drawLevel2() {
     ctx.shadowBlur = 0;
 
     // Note name
-    ctx.font = 'bold 24px Comic Sans MS, cursive';
+    ctx.font = 'bold 24px Fredoka, "Comic Sans MS", cursive';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
     ctx.textBaseline = 'middle';
@@ -1866,7 +1989,7 @@ function drawLevel3() {
 
     // Note name
     if (w > 50) {
-      ctx.font = `bold ${Math.min(24, w * 0.35)}px Comic Sans MS, cursive`;
+      ctx.font = `bold ${Math.min(24, w * 0.35)}px Fredoka, "Comic Sans MS", cursive`;
       ctx.textAlign = 'center';
       ctx.fillStyle = 'white';
       ctx.textBaseline = 'middle';
@@ -1881,7 +2004,7 @@ function drawLevel3() {
   l3HitFeedbacks.forEach(f => {
     ctx.save();
     ctx.globalAlpha = f.life;
-    ctx.font = 'bold 26px Comic Sans MS, cursive';
+    ctx.font = 'bold 26px Fredoka, "Comic Sans MS", cursive';
     ctx.textAlign = 'center';
     ctx.fillStyle = f.color;
     ctx.shadowColor = f.color;
@@ -1892,7 +2015,7 @@ function drawLevel3() {
 
   // Song title
   ctx.save();
-  ctx.font = 'bold 28px Comic Sans MS, cursive';
+  ctx.font = 'bold 28px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,215,0,0.8)';
   ctx.shadowColor = '#FFD700';
@@ -1906,7 +2029,7 @@ function drawLevel3() {
     const alpha = Math.min(1, (-l3ElapsedTime % 1) + 0.15);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = `bold ${Math.floor(H * 0.18)}px Comic Sans MS, cursive`;
+    ctx.font = `bold ${Math.floor(H * 0.18)}px Fredoka, "Comic Sans MS", cursive`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD700';
     ctx.shadowColor = '#FFD700';
@@ -1916,7 +2039,7 @@ function drawLevel3() {
   }
 
   // Instruction
-  ctx.font = '18px Comic Sans MS, cursive';
+  ctx.font = '18px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(200,200,255,0.6)';
   ctx.fillText('Appuie sur la bonne touche quand la note arrive à la ligne dorée !', W / 2, 90);
@@ -1928,7 +2051,7 @@ function drawLevel3() {
 
   // Score big
   ctx.save();
-  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.font = 'bold 22px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,200,0.7)';
   ctx.fillText(`Notes réussies : ${l3Score} / ${MELODY.length}`, W / 2, H - 170);
@@ -2031,7 +2154,7 @@ function drawWin(dt) {
   ctx.save();
   ctx.translate(W / 2, H * 0.18);
   ctx.scale(pulse, pulse);
-  ctx.font = `bold ${Math.floor(W * 0.07)}px Comic Sans MS, cursive`;
+  ctx.font = `bold ${Math.floor(W * 0.07)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#FFD700';
   ctx.shadowColor = '#FFD700';
@@ -2040,7 +2163,7 @@ function drawWin(dt) {
   ctx.shadowBlur = 0;
   ctx.restore();
 
-  ctx.font = `bold ${Math.floor(W * 0.03)}px Comic Sans MS, cursive`;
+  ctx.font = `bold ${Math.floor(W * 0.03)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'white';
   ctx.fillText('Zom & Vlad ont retrouvé toutes leurs couleurs !', W / 2, H * 0.28);
@@ -2065,14 +2188,14 @@ function drawWin(dt) {
     ctx.restore();
   }
 
-  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.font = 'bold 22px Fredoka, "Comic Sans MS", cursive';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#FFD700';
   ctx.fillText(`Score final : ${score} points ⭐`, W / 2, H * 0.79);
 
   // Note sequence reminder
   const noteColors = [0, 0, 0, 1, 2, 1, 0, 2, 1, 1, 0].map(i => NOTES[i].color);
-  ctx.font = '14px Comic Sans MS, cursive';
+  ctx.font = '14px Fredoka, "Comic Sans MS", cursive';
   ctx.fillStyle = 'rgba(200,200,255,0.6)';
   ctx.fillText('Tu as joué : Au Clair de la Lune ! 🎵', W / 2, H * 0.84);
 
@@ -2090,7 +2213,7 @@ function drawWin(dt) {
   ctx.shadowColor = '#4488FF';
   ctx.shadowBlur = 20;
   ctx.fill();
-  ctx.font = 'bold 22px Comic Sans MS, cursive';
+  ctx.font = 'bold 22px Fredoka, "Comic Sans MS", cursive';
   ctx.fillStyle = 'white';
   ctx.shadowBlur = 0;
   ctx.textAlign = 'center';
@@ -2222,7 +2345,7 @@ function drawLevel4() {
 
   // Title
   ctx.save();
-  ctx.font = `bold ${Math.floor(W * 0.038)}px Comic Sans MS, cursive`;
+  ctx.font = `bold ${Math.floor(W * 0.038)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#88FFCC';
   ctx.shadowColor = '#44FFAA';
@@ -2230,7 +2353,7 @@ function drawLevel4() {
   ctx.fillText('🎵 Piano Libre 🎵', W / 2, H * 0.18);
   ctx.restore();
 
-  ctx.font = `${Math.floor(W * 0.020)}px Comic Sans MS, cursive`;
+  ctx.font = `${Math.floor(W * 0.020)}px Fredoka, "Comic Sans MS", cursive`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(200,255,230,0.6)';
   ctx.fillText('Appuie sur les touches et explore les sons !', W / 2, H * 0.26);
@@ -2246,7 +2369,7 @@ function drawLevel4() {
     const alpha = Math.min(1, l4NoteTimer);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = `bold ${Math.floor(W * 0.12)}px Comic Sans MS, cursive`;
+    ctx.font = `bold ${Math.floor(W * 0.12)}px Fredoka, "Comic Sans MS", cursive`;
     ctx.textAlign = 'center';
     ctx.fillStyle = l4LastNote.color;
     ctx.shadowColor = l4LastNote.color;
