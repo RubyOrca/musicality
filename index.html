@@ -1787,7 +1787,22 @@ function l2HandleNote(noteId) {
       p.litTimer = 0;
       spawnParticles(p.x, p.y, p.note.color, 14);
     }
-    setTimeout(() => playSuccess(), 1000);
+    // Voice: pronounce the note name at the matching pitch
+    const noteName = NOTES[noteId].name;
+    const noteFreq = NOTES[noteId].freq;
+    setTimeout(() => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(noteName);
+        utt.lang = 'fr-FR';
+        // Map note freq (261→523 Hz) to pitch range (0.6→1.8)
+        utt.pitch = 0.6 + (noteFreq - 261.63) / (523.25 - 261.63) * 1.2;
+        utt.rate = 0.75;
+        utt.volume = 1.0;
+        window.speechSynthesis.speak(utt);
+      }
+    }, 350);
+    setTimeout(() => playSuccess(), 1200);
     score += 15;
     l2Score++;
     updateHUD();
